@@ -3,18 +3,25 @@ package com.jogdesktopapp.Jog_Desktop_App;
 import okhttp3.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+
 import java.io.*;
+import java.nio.file.Files;
 
 public class SynologyServerModel {
     private static SynologyServerModel instance;
-    private static final String SERVER_IP = "123.123.123.123";
-    private static final String USERNAME = "your_username";
-    private static final String PASSWORD = "your_password";
+    private static final String SERVER_IP = "192.168.88.186";
+    private static final String USERNAME = "Synology0822";
+    private static final String PASSWORD = "Install0822";
+    static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&version=2&method=upload&folder_path=/jog%208tb/JOG%20India";
     private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi/";
     private static final String FILE_API = API_URL + "entry.cgi";
+    private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
 
     private String sessionId;
     boolean isConnected;
@@ -33,11 +40,17 @@ public class SynologyServerModel {
         return instance;
     }
 
+    /**
+     * Initializes connection to Synology NAS.
+     */
     public void init() {
         System.out.println("Initializing connection to Synology NAS...");
         isConnected = authenticate();
     }
 
+    /**
+     * Authenticates the user and establishes a session.
+     */
     private boolean authenticate() {
         String loginUrl = API_URL + "auth.cgi?api=SYNO.API.Auth&method=login&version=2"
                 + "&account=" + USERNAME + "&passwd=" + PASSWORD 
@@ -62,15 +75,65 @@ public class SynologyServerModel {
         System.err.println("Failed to authenticate.");
         return false;
     }
+    
+    /**
+     * Uploads a file to the NAS inside the specified file path folder.
+     */
+    static void uploadFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                byte[] fileData = Files.readAllBytes(selectedFile.toPath());
+                sendFileToNas(selectedFile.getName(), fileData);
+                JOptionPane.showMessageDialog(null, "File uploaded successfully!");
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(null, "Error uploading file: " + ex.getMessage());
+            }
+        }
+    }
 
+    private static void sendFileToNas(String fileName, byte[] fileData) {
+        OkHttpClient client = new OkHttpClient();
+        
+        RequestBody fileBody = RequestBody.create(fileData, MediaType.parse("application/octet-stream"));
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("api", "SYNO.FileStation.Upload")
+                .addFormDataPart("version", "2")
+                .addFormDataPart("method", "upload")
+                .addFormDataPart("_sid", getInstance().sessionId)
+                .addFormDataPart("folder_path", FOLDERPATH)
+                .addFormDataPart("create_parents", "true")
+                .addFormDataPart("file", fileName, fileBody)
+                .build();
+        
+        Request request = new Request.Builder()
+                .url(FILE_API)
+                .post(requestBody)
+                .build();
+        
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                System.out.println("File uploaded successfully: " + fileName);
+            } else {
+                System.err.println("Failed to upload file: " + fileName);
+            }
+        } catch (IOException e) {
+            System.err.println("Error uploading file: " + e.getMessage());
+        }
+    }
+    
+    
     /**
      * Fetches file/folder list from the NAS.
      */
-    public List<String> getFilesystem(String folderPath) {
+    public List<String> getFilesystem() {
         List<String> fileList = new ArrayList<>();
 
         String listUrl = FILE_API + "?api=SYNO.FileStation.List&version=2&method=list"
-                + "&folder_path=" + folderPath + "&_sid=" + sessionId;
+                + "&folder_path=" + FOLDERPATH + "&_sid=" + sessionId;
 
         Request request = new Request.Builder().url(listUrl).get().build();
 
@@ -95,6 +158,9 @@ public class SynologyServerModel {
         return fileList;
     }
 
+    /**
+     * Logs out from the Synology NAS session.
+     */
     public void logout() {
         if (sessionId == null) {
             System.out.println("No active session to logout.");
@@ -117,6 +183,7 @@ public class SynologyServerModel {
     }
 }
 
+
  class FileUtils {
     public static boolean writeToFile(InputStream inputStream, File file) {
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
@@ -132,3 +199,5 @@ public class SynologyServerModel {
         }
     }
 }
+
+ 
