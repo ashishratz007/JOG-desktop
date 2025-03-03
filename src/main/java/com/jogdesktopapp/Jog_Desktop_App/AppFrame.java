@@ -79,6 +79,14 @@ class AppFrame extends JFrame {
         // Status Label
         JLabel statusLabel = new JLabel("Online");
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+     // Add click listener
+        statusLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            	 App.synologyServer.getFilesystem();
+            }
+        });
+
 
         statusContainer.add(statusDot);
         statusContainer.add(statusLabel);
