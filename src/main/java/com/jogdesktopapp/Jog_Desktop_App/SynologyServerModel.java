@@ -52,12 +52,11 @@ public class SynologyServerModel {
      * Authenticates the user and establishes a session.
      */
     private boolean authenticate() {
-        String loginUrl = API_URL + "auth.cgi?api=SYNO.API.Auth&method=login&version=2"
-                + "&account=" + USERNAME + "&passwd=" + PASSWORD 
-                + "&session=FileStation&format=sid";
+    	
+        String loginUrl = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&[…]gy0822&passwd=InstallSUB2025&session=FileStation&format=sid";
 
         Request request = new Request.Builder().url(loginUrl).get().build();
-
+        System.out.println("Initializing connection to Synology NAS...");
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 JsonNode jsonResponse = objectMapper.readTree(response.body().string());
