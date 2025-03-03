@@ -77,7 +77,7 @@ public class SynologyServerModel {
     /**
      * Uploads a file to the NAS inside the specified file path folder.
      */
-    static void uploadFile() {
+     void uploadFile() {
         JFileChooser fileChooser = new JFileChooser();
         int returnValue = fileChooser.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
@@ -128,10 +128,10 @@ public class SynologyServerModel {
      * Fetches file/folder list from the NAS.
      */
     public List<String> getFilesystem() {
+    	 System.out.println("Entred into the get files");
         List<String> fileList = new ArrayList<>();
 
-        String listUrl = FILE_API + "?api=SYNO.FileStation.List&version=2&method=list"
-                + "&folder_path=" + FOLDERPATH + "&_sid=" + sessionId;
+        String listUrl = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.List&version=2&method=list&folder_path=/jog%208tb/JOG%20India" + "&_sid=" + sessionId;
 
         Request request = new Request.Builder().url(listUrl).get().build();
 

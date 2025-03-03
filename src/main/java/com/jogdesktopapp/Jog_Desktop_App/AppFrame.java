@@ -83,6 +83,7 @@ class AppFrame extends JFrame {
         statusLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+            	 System.out.println("Clicked event");
             	 App.synologyServer.getFilesystem();
             }
         });
