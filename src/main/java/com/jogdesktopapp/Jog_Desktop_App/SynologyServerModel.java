@@ -19,7 +19,7 @@ public class SynologyServerModel {
     private static final String USERNAME = "Synology0822";
     private static final String PASSWORD = "InstallSUB2025";
     static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&version=2&method=upload&folder_path=/jog%208tb/JOG%20India";
-    private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi/";
+    private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi.cgi/";
     private static final String FILE_API = API_URL + "entry.cgi";
     private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
 
@@ -52,9 +52,8 @@ public class SynologyServerModel {
      * Authenticates the user and establishes a session.
      */
     private boolean authenticate() {
-    	
-        String loginUrl = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&[…]gy0822&passwd=InstallSUB2025&session=FileStation&format=sid";
-
+ 	   String loginUrl = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account="+USERNAME + "&passwd="+ "InstallSUB2025"+ "&session=FileStation&format=sid";
+ 	   
         Request request = new Request.Builder().url(loginUrl).get().build();
         System.out.println("Initializing connection to Synology NAS...");
         try (Response response = client.newCall(request).execute()) {
