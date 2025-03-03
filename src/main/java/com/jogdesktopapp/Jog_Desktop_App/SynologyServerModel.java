@@ -77,7 +77,7 @@ public class SynologyServerModel {
     /**
      * Uploads a file to the NAS inside the specified file path folder.
      */
-     void uploadFile() {
+    public  void uploadFile() {
         JFileChooser fileChooser = new JFileChooser();
         int returnValue = fileChooser.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
@@ -108,7 +108,7 @@ public class SynologyServerModel {
                 .build();
         
         Request request = new Request.Builder()
-                .url(FILE_API)
+                .url(UPLOADPATH)
                 .post(requestBody)
                 .build();
         
