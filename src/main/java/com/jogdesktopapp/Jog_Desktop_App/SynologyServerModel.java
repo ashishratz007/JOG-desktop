@@ -18,7 +18,7 @@ public class SynologyServerModel {
     private static final String SERVER_IP = "192.168.88.186";
     private static final String USERNAME = "Synology0822";
     private static final String PASSWORD = "InstallSUB2025";
-    static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&version=2&method=upload&folder_path=/jog%208tb/JOG%20India";
+    static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&version=2&method=upload&path=/jog%208tb/JOG%20India";
     private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi.cgi/";
     private static final String FILE_API = API_URL + "entry.cgi";
     private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
@@ -102,7 +102,7 @@ public class SynologyServerModel {
                 .addFormDataPart("version", "2")
                 .addFormDataPart("method", "upload")
                 .addFormDataPart("_sid", getInstance().sessionId)
-                .addFormDataPart("folder_path", FOLDERPATH)
+                .addFormDataPart("path", FOLDERPATH)
                 .addFormDataPart("create_parents", "true")
                 .addFormDataPart("file", fileName, fileBody)
                 .build();
