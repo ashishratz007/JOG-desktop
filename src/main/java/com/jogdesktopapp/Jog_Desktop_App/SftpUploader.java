@@ -100,7 +100,7 @@ public class SftpUploader {
      */
     static void downloadFile( ) {
     	String remoteFilePath = REMOTE_UPLOAD_DIR;
-    	String localFilePath =  "C:\\JOG-Graphic\\Desktop\\JOG India Workspace\\Files";
+    	String localFilePath =  "C:\\Users\\JOG-Graphic\\Desktop\\JOG India Workspace\\Files";
     	
         Session session = null;
         ChannelSftp channel = null;
