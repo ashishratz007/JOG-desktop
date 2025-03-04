@@ -21,7 +21,7 @@ public class PermissionRequest {
     }
 
     private static void grantWritePermission() {
-        File folder = new File("C:\\JOG-Graphic\\Desktop\\JOG India WorkspaceFiles");
+        File folder = new File("C:\\JOG-Graphic\\Desktop\\JOG India Workspace\\Files");
 
         if (!folder.exists()) {
             folder.mkdirs(); // Create folder if it doesn't exist
