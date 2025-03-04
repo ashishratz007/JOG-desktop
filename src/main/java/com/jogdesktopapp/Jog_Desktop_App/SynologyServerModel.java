@@ -111,18 +111,21 @@ public class SynologyServerModel {
                 .url(UPLOADPATH)
                 .post(requestBody)
                 .build();
-        
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
+                String responseBody = response.body().string();  // Read response body
                 System.out.println("File uploaded successfully: " + fileName);
+                System.out.println("Server response: " + responseBody); // Print response
             } else {
                 System.err.println("Failed to upload file: " + fileName);
+                if (response.body() != null) {
+                    System.err.println("Server response: " + response.body().string()); // Print error response
+                }
             }
-            System.err.println("Server response is :" + response.body());
         } catch (IOException e) {
-        	
             System.err.println("Error uploading file: " + e.getMessage());
         }
+
     }
     
     
