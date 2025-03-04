@@ -103,7 +103,7 @@ public class SynologyServerModel {
 //                .addFormDataPart("version", "2")
 //                .addFormDataPart("method", "upload")
 //                .addFormDataPart("_sid", sessionId)
-//                .addFormDataPart("path", FOLDERPATH)
+                .addFormDataPart("path", FOLDERPATH)
                 .addFormDataPart("create_parents", "true")
                 .addFormDataPart("file", fileName, fileBody)
                 .build();
