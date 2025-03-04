@@ -94,4 +94,52 @@ public class SftpUploader {
         }
         return false;
     }
+    
+    /**
+     * Downloads a file from the SFTP server.
+     */
+    static void downloadFile( ) {
+    	String remoteFilePath = REMOTE_UPLOAD_DIR;
+    	String localFilePath = "C:/JOG-Graphic/Desktop/JOG India WorkspaceFiles";
+        Session session = null;
+        ChannelSftp channel = null;
+
+        try {
+            JSch jsch = new JSch();
+            session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
+            session.setPassword(PASSWORD);
+            session.setConfig("StrictHostKeyChecking", "no");
+            System.out.println("🔗 Connecting to SFTP...");
+            session.connect(15_000);
+
+            channel = (ChannelSftp) session.openChannel("sftp");
+            channel.connect(10_000);
+            System.out.println("✅ SFTP Connected!");
+
+            System.out.println("📥 Downloading file: " + remoteFilePath + " -> " + localFilePath);
+
+            try (FileOutputStream fos = new FileOutputStream(localFilePath)) {
+                channel.get(remoteFilePath, fos);
+            }
+
+            System.out.println("✅ Download successful!");
+
+
+        } catch (JSchException e) {
+            System.err.println("❌ SFTP Connection Error: " + e.getMessage());
+        } catch (SftpException e) {
+            System.err.println("❌ SFTP Download Error: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("❌ File Write Error: " + e.getMessage());
+        } finally {
+            if (channel != null && channel.isConnected()) {
+                channel.disconnect();
+                System.out.println("🔌 SFTP Channel closed.");
+            }
+            if (session != null && session.isConnected()) {
+                session.disconnect();
+                System.out.println("🔌 SFTP Session closed.");
+            }
+        }
+    }
 }
