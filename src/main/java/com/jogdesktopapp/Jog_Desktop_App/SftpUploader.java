@@ -11,7 +11,7 @@ public class SftpUploader {
 
     // Configurable variables (adjust these for your setup)
     private static final String SFTP_HOST = "192.168.88.186"; // SFTP server URL
-    private static final int SFTP_PORT = 5000; // SFTP port
+    private static final int SFTP_PORT = 22; // SFTP port
     private static final String REMOTE_UPLOAD_DIR = "/jog 208tb/JOG India"; // Remote directory (removed % encoding)
     private static final String USERNAME = "Synology0822"; 
     private static final String PASSWORD = "InstallSUB2025"; // Store securely
