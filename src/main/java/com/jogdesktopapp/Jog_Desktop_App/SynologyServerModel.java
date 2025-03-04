@@ -18,7 +18,7 @@ public class SynologyServerModel {
     private static final String SERVER_IP = "192.168.88.186";
     private static final String USERNAME = "Synology0822";
     private static final String PASSWORD = "InstallSUB2025";
-    static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&method=upload&version=2&method=upload&path=/jog%208tb/JOG%20India";
+    static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&version=2&method=upload&path=/jog%208tb/JOG%20India";
     private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi.cgi/";
     private static final String FILE_API = API_URL + "entry.cgi";
     private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
@@ -95,31 +95,23 @@ public class SynologyServerModel {
 
     private  void sendFileToNas(String fileName, byte[] fileData) {
         OkHttpClient client = new OkHttpClient();
-        
+        System.err.println("Session Idd is: " + sessionId); // Print error response
         RequestBody fileBody = RequestBody.create(fileData, MediaType.parse("application/octet-stream"));
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-//                .addFormDataPart("api", "SYNO.FileStation.Upload")
-//                .addFormDataPart("version", "2")
-//                .addFormDataPart("method", "upload")
-//                .addFormDataPart("_sid", sessionId)
+                .addFormDataPart("api", "SYNO.FileStation.Upload")
+                .addFormDataPart("version", "2")
+                .addFormDataPart("method", "upload")
+                .addFormDataPart("_sid", sessionId)
                 .addFormDataPart("path", FOLDERPATH)
                 .addFormDataPart("create_parents", "true")
                 .addFormDataPart("file", fileName, fileBody)
                 .build();
         
-        // Construct URL with required query parameters
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(UPLOADPATH).newBuilder();
-        urlBuilder.addQueryParameter("api", "SYNO.FileStation.Upload");
-        urlBuilder.addQueryParameter("version", "2");
-        urlBuilder.addQueryParameter("method", "upload");
-        urlBuilder.addQueryParameter("_sid", sessionId);
-        
         Request request = new Request.Builder()
-                .url(urlBuilder.build())
+                .url(UPLOADPATH + "&_sid=" + sessionId)
                 .post(requestBody)
                 .build();
-        
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 String responseBody = response.body().string();  // Read response body
