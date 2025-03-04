@@ -24,7 +24,7 @@ public class SynologyServerModel {
     private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
     private static final String DOWNLOAD_URL = "http://192.168.88.186:5000/webapi/entry.cgi"; 
 
-    private String sessionId;
+    String sessionId;
     boolean isConnected;
     private final OkHttpClient client;
     private final ObjectMapper objectMapper;
@@ -99,10 +99,10 @@ public class SynologyServerModel {
         RequestBody fileBody = RequestBody.create(fileData, MediaType.parse("application/octet-stream"));
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("api", "SYNO.FileStation.Upload")
-                .addFormDataPart("version", "2")
-                .addFormDataPart("method", "upload")
-                .addFormDataPart("_sid", sessionId)
+//                .addFormDataPart("api", "SYNO.FileStation.Upload")
+//                .addFormDataPart("version", "2")
+//                .addFormDataPart("method", "upload")
+//                .addFormDataPart("_sid", sessionId)
                 .addFormDataPart("path", FOLDERPATH)
                 .addFormDataPart("create_parents", "true")
                 .addFormDataPart("file", fileName, fileBody)
@@ -124,6 +124,7 @@ public class SynologyServerModel {
                 }
             }
         } catch (IOException e) {
+        	 
             System.err.println("Error uploading file: " + e.getMessage());
         }
 

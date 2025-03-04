@@ -84,7 +84,7 @@ class AppFrame extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
             	 System.out.println("Clicked event");
-            	 App.synologyServer.uploadFile();
+            	 SftpUploader.pickAndUploadFile();
             }
         });
 
