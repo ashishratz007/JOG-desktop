@@ -3,29 +3,23 @@ package com.jogdesktopapp.Jog_Desktop_App;
 import okhttp3.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.StringBody;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SynologyServerModel {
     private static SynologyServerModel instance;
     private static final String SERVER_IP = "192.168.88.186";
     private static final String USERNAME = "Synology0822";
-    private static final String PASSWORD = "Install0822";
-    private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi/";
+    private static final String PASSWORD = "InstallSUB2025";
+    static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&method=upload&version=2&method=upload&path=/jog%208tb/JOG%20India";
+    private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi.cgi/";
     private static final String FILE_API = API_URL + "entry.cgi";
     private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
 
@@ -46,18 +40,22 @@ public class SynologyServerModel {
         return instance;
     }
 
+    /**
+     * Initializes connection to Synology NAS.
+     */
     public void init() {
         System.out.println("Initializing connection to Synology NAS...");
         isConnected = authenticate();
     }
 
+    /**
+     * Authenticates the user and establishes a session.
+     */
     private boolean authenticate() {
-        String loginUrl = API_URL + "auth.cgi?api=SYNO.API.Auth&method=login&version=2"
-                + "&account=" + USERNAME + "&passwd=" + PASSWORD 
-                + "&session=FileStation&format=sid";
-
+ 	   String loginUrl = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account="+USERNAME + "&passwd="+ "InstallSUB2025"+ "&session=FileStation&format=sid";
+ 	   
         Request request = new Request.Builder().url(loginUrl).get().build();
-
+        System.out.println("Initializing connection to Synology NAS...");
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 JsonNode jsonResponse = objectMapper.readTree(response.body().string());
@@ -76,61 +74,66 @@ public class SynologyServerModel {
         return false;
     }
     
-    static void uploadFile() {
+    /**
+     * Uploads a file to the NAS inside the specified file path folder.
+     */
+    public  void uploadFile() {
         JFileChooser fileChooser = new JFileChooser();
         int returnValue = fileChooser.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             try {
-                sendFileToNas(selectedFile);
+                byte[] fileData = Files.readAllBytes(selectedFile.toPath());
+                sendFileToNas(selectedFile.getName(), fileData);
                 JOptionPane.showMessageDialog(null, "File uploaded successfully!");
-            } catch (Exception ex) {
+            } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Error uploading file: " + ex.getMessage());
             }
         }
     }
 
-    private static void sendFileToNas(File file) throws Exception {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        try {
-            HttpPost httppost = new HttpPost("http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&method=upload&version=2");
-            httppost.addHeader("Cookie", "id=" + getInstance().sessionId);
-
-            FileBody fileBody = new FileBody(file);
-            HttpEntity reqEntity = MultipartEntityBuilder.create()
-                    .addPart("overwrite", new StringBody("false", org.apache.http.entity.ContentType.TEXT_PLAIN))
-                    .addPart("path", new StringBody(FOLDERPATH, org.apache.http.entity.ContentType.TEXT_PLAIN))
-                    .addPart("create_parents", new StringBody("true", org.apache.http.entity.ContentType.TEXT_PLAIN))
-                    .addPart("filename", fileBody)
-                    .setLaxMode()
-                    .build();
-
-            httppost.setEntity(reqEntity);
-
-            System.out.println("Executing request " + httppost.getRequestLine());
-            CloseableHttpResponse response = httpclient.execute(httppost);
-            try {
-                System.out.println("----------------------------------------");
-                System.out.println(response.getStatusLine());
-                HttpEntity resEntity = response.getEntity();
-                if (resEntity != null) {
-                    System.out.println("Response content length: " + resEntity.getContentLength());
-                    System.out.println(EntityUtils.toString(resEntity));
-                }
-                EntityUtils.consume(resEntity);
-            } finally {
-                response.close();
+    private static void sendFileToNas(String fileName, byte[] fileData) {
+        OkHttpClient client = new OkHttpClient();
+        
+        RequestBody fileBody = RequestBody.create(fileData, MediaType.parse("application/octet-stream"));
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("api", "SYNO.FileStation.Upload")
+                .addFormDataPart("version", "2")
+                .addFormDataPart("method", "upload")
+                .addFormDataPart("_sid", getInstance().sessionId)
+                .addFormDataPart("path", FOLDERPATH)
+                .addFormDataPart("create_parents", "true")
+                .addFormDataPart("file", fileName, fileBody)
+                .build();
+        
+        Request request = new Request.Builder()
+                .url(UPLOADPATH)
+                .post(requestBody)
+                .build();
+        
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                System.out.println("File uploaded successfully: " + fileName);
+            } else {
+                System.err.println("Failed to upload file: " + fileName);
             }
-        } finally {
-            httpclient.close();
+            System.err.println("Server response is :" + response.body());
+        } catch (IOException e) {
+        	
+            System.err.println("Error uploading file: " + e.getMessage());
         }
     }
-
+    
+    
+    /**
+     * Fetches file/folder list from the NAS.
+     */
     public List<String> getFilesystem() {
+    	 System.out.println("Entred into the get files");
         List<String> fileList = new ArrayList<>();
 
-        String listUrl = FILE_API + "?api=SYNO.FileStation.List&version=2&method=list"
-                + "&folder_path=" + FOLDERPATH + "&_sid=" + sessionId;
+        String listUrl = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.List&version=2&method=list&folder_path=/jog%208tb/JOG%20India" + "&_sid=" + sessionId;
 
         Request request = new Request.Builder().url(listUrl).get().build();
 
@@ -155,6 +158,9 @@ public class SynologyServerModel {
         return fileList;
     }
 
+    /**
+     * Logs out from the Synology NAS session.
+     */
     public void logout() {
         if (sessionId == null) {
             System.out.println("No active session to logout.");
@@ -176,6 +182,7 @@ public class SynologyServerModel {
         }
     }
 }
+
 
  class FileUtils {
     public static boolean writeToFile(InputStream inputStream, File file) {
