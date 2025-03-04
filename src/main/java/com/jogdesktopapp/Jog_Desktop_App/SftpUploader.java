@@ -101,10 +101,12 @@ public class SftpUploader {
     static void downloadFile( ) {
     	String remoteFilePath = REMOTE_UPLOAD_DIR;
     	String localFilePath =  "C:\\JOG-Graphic\\Desktop\\JOG India WorkspaceFiles";
+    	
         Session session = null;
         ChannelSftp channel = null;
 
         try {
+        	
             JSch jsch = new JSch();
             session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
             session.setPassword(PASSWORD);
