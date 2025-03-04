@@ -22,6 +22,7 @@ public class SynologyServerModel {
     private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi.cgi/";
     private static final String FILE_API = API_URL + "entry.cgi";
     private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
+    private static final String DOWNLOAD_URL = "http://192.168.88.186:5000/webapi/entry.cgi"; 
 
     private String sessionId;
     boolean isConnected;
@@ -92,25 +93,33 @@ public class SynologyServerModel {
         }
     }
 
-    private static void sendFileToNas(String fileName, byte[] fileData) {
+    private  void sendFileToNas(String fileName, byte[] fileData) {
         OkHttpClient client = new OkHttpClient();
         
         RequestBody fileBody = RequestBody.create(fileData, MediaType.parse("application/octet-stream"));
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("api", "SYNO.FileStation.Upload")
-                .addFormDataPart("version", "2")
-                .addFormDataPart("method", "upload")
-                .addFormDataPart("_sid", "O4suzHvGXkodHXHTTqWqo8fS_2c60G13trBuZVkBpTsakI7jQ2SE6u-XuyHIHVhYHAOJDbcxYmLGS4DtNg8zNg")
-                .addFormDataPart("path", FOLDERPATH)
+//                .addFormDataPart("api", "SYNO.FileStation.Upload")
+//                .addFormDataPart("version", "2")
+//                .addFormDataPart("method", "upload")
+//                .addFormDataPart("_sid", sessionId)
+//                .addFormDataPart("path", FOLDERPATH)
                 .addFormDataPart("create_parents", "true")
                 .addFormDataPart("file", fileName, fileBody)
                 .build();
         
+        // Construct URL with required query parameters
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(UPLOADPATH).newBuilder();
+        urlBuilder.addQueryParameter("api", "SYNO.FileStation.Upload");
+        urlBuilder.addQueryParameter("version", "2");
+        urlBuilder.addQueryParameter("method", "upload");
+        urlBuilder.addQueryParameter("_sid", sessionId);
+        
         Request request = new Request.Builder()
-                .url(UPLOADPATH)
+                .url(urlBuilder.build())
                 .post(requestBody)
                 .build();
+        
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 String responseBody = response.body().string();  // Read response body
@@ -128,6 +137,47 @@ public class SynologyServerModel {
 
     }
     
+    /**
+     * Download file/folder list from the NAS.
+     */
+    public  void downloadFile(String remoteFilePath, String localSavePath) {
+        OkHttpClient client = new OkHttpClient();
+
+        // Build URL with query parameters
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(DOWNLOAD_URL).newBuilder();
+        urlBuilder.addQueryParameter("api", "SYNO.FileStation.Download");
+        urlBuilder.addQueryParameter("version", "2");
+        urlBuilder.addQueryParameter("method", "download");
+        urlBuilder.addQueryParameter("_sid", sessionId);
+        urlBuilder.addQueryParameter("path", remoteFilePath);
+
+        Request request = new Request.Builder()
+                .url(urlBuilder.build())
+                .get()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                File file = new File(localSavePath);
+                try (FileOutputStream fos = new FileOutputStream(file);
+                     InputStream is = response.body().byteStream()) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                    }
+                    System.out.println("File downloaded successfully: " + localSavePath);
+                }
+            } else {
+                System.err.println("Failed to download file: " + remoteFilePath);
+                if (response.body() != null) {
+                    System.err.println("Server response: " + response.body().string());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error downloading file: " + e.getMessage());
+        }
+    }
     
     /**
      * Fetches file/folder list from the NAS.
