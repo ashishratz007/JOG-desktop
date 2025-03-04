@@ -101,7 +101,7 @@ public class SynologyServerModel {
                 .addFormDataPart("api", "SYNO.FileStation.Upload")
                 .addFormDataPart("version", "2")
                 .addFormDataPart("method", "upload")
-                .addFormDataPart("_sid", getInstance().sessionId)
+                .addFormDataPart("_sid", "O4suzHvGXkodHXHTTqWqo8fS_2c60G13trBuZVkBpTsakI7jQ2SE6u-XuyHIHVhYHAOJDbcxYmLGS4DtNg8zNg")
                 .addFormDataPart("path", FOLDERPATH)
                 .addFormDataPart("create_parents", "true")
                 .addFormDataPart("file", fileName, fileBody)
