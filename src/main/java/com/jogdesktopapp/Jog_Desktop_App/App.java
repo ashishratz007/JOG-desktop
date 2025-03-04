@@ -6,6 +6,7 @@ public class App {
     static SynologyServerModel synologyServer = SynologyServerModel.getInstance(); // Initialize the singleton
 
     public static void main(String[] args) {
+    	PermissionRequest.main(args); 
         EventQueue.invokeLater(() -> {
             try {
                 synologyServer.init(); // Now it won't be null
