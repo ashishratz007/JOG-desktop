@@ -9,18 +9,26 @@ public class PermissionRequest {
     }
 
     private static void createFolderIfNotExits() { 
-        File folder = new File("C:\\Program Files\\JOGDesktop");
+        String userHome = System.getProperty("user.home");
+        System.out.println("Initializing connection to Synology NAS..." + userHome);
+        File folder = new File(userHome + "\\Documents\\JOGDesktop");
 
         if (!folder.exists()) {
-            folder.mkdirs(); // Create folder if it doesn't exist
-            JOptionPane.showMessageDialog(null, "✅ Folder Created.");
+            boolean created = folder.mkdirs(); // Create folder
+            if (created) {
+                JOptionPane.showMessageDialog(null, "✅ Folder Created.");
+            } else {
+                JOptionPane.showMessageDialog(null, "❌ Failed to create directory.");
+                return;
+            }
         }
 
         boolean success = folder.setWritable(true, true); // Grant write permission
         if (success) {
             JOptionPane.showMessageDialog(null, "✅ Write permission granted!");
         } else {
-            JOptionPane.showMessageDialog(null, "❌ Failed to create folder");
+            JOptionPane.showMessageDialog(null, "❌ Failed to grant permission.");
         }
     }
+
 }
