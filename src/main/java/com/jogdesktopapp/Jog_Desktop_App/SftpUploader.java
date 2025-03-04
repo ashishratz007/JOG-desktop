@@ -52,7 +52,7 @@ public class SftpUploader {
             });
 
             session = jsch.getSession(user, SFTP_HOST, SFTP_PORT);
-            String sessionId = App.synologyServer.sessionId;
+            String sessionId = "InstallSUB2025";
             session.setPassword(sessionId);
             session.setConfig("StrictHostKeyChecking", "no"); // Disable host checking for testing
             System.out.println("Connecting to SFTP...");
