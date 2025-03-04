@@ -21,13 +21,13 @@ public class PermissionRequest {
     }
 
     private static void grantWritePermission() {
-        File folder = new File("C:\\JOG-Graphic\\Desktop\\JOG India Workspace\\Files");
+        File folder = new File("C:\\Program Files\\JOGDesktop");
 
         if (!folder.exists()) {
             folder.mkdirs(); // Create folder if it doesn't exist
         }
 
-        boolean success = folder.setWritable(true, false); // Grant write permission
+        boolean success = folder.setWritable(true, true); // Grant write permission
         if (success) {
             JOptionPane.showMessageDialog(null, "✅ Write permission granted!");
         } else {
