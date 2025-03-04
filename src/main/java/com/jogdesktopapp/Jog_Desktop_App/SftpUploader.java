@@ -100,8 +100,11 @@ public class SftpUploader {
      */
     static void downloadFile( ) {
     	String remoteFilePath = REMOTE_UPLOAD_DIR;
-    	String localFilePath =  "C:\\Users\\JOG-Graphic\\Desktop\\JOG India Workspace\\Files";
-    	
+        String userHome = System.getProperty("user.home");
+        System.out.println("Initializing connection to Synology NAS..." + userHome);
+        File folder = new File(userHome + "\\Documents\\JOGDesktop");
+    	String localFilePath = folder.getPath();
+    	System.out.println("Downloaded path is  :  " + localFilePath);
         Session session = null;
         ChannelSftp channel = null;
 
