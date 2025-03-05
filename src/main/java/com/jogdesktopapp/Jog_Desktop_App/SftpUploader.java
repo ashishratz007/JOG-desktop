@@ -98,52 +98,101 @@ public class SftpUploader {
     /**
      * Downloads a file from the SFTP server.
      */
-    static void downloadFile( ) {
-    	String remoteFilePath = REMOTE_UPLOAD_DIR + "file1.eps";
+//    static void downloadFile( ) {
+//    	String remoteFilePath = REMOTE_UPLOAD_DIR + "file1.eps";
+//        String userHome = System.getProperty("user.home");
+//        System.out.println("Initializing connection to Synology NAS..." + userHome);
+//        File folder = new File(userHome + "\\Downloads");
+//    	String localFilePath = folder.getPath();
+//    	System.out.println("Downloaded path is  :  " + localFilePath);
+//        Session session = null;
+//        ChannelSftp channel = null;
+//
+//        try {
+//        	
+//            JSch jsch = new JSch();
+//            session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
+//            session.setPassword(PASSWORD);
+//            session.setConfig("StrictHostKeyChecking", "no");
+//            System.out.println("🔗 Connecting to SFTP...");
+//            session.connect(15_000);
+//
+//            channel = (ChannelSftp) session.openChannel("sftp");
+//            channel.connect(10_000);
+//            System.out.println("✅ SFTP Connected!");
+//
+//            System.out.println("📥 Downloading file: " + remoteFilePath + " -> " + localFilePath);
+//
+//            try (FileOutputStream fos = new FileOutputStream(localFilePath)) {
+//                channel.get(remoteFilePath, fos);
+//            }
+//
+//            System.out.println("✅ Download successful!");
+//
+//
+//        } catch (JSchException e) {
+//            System.err.println("❌ SFTP Connection Error: " + e.getMessage());
+//        } catch (SftpException e) {
+//            System.err.println("❌ SFTP Download Error: " + e.getMessage());
+//        } catch (IOException e) {
+//            System.err.println("❌ File Write Error: " + e.getMessage());
+//        } finally {
+//            if (channel != null && channel.isConnected()) {
+//                channel.disconnect();
+//                System.out.println("🔌 SFTP Channel closed.");
+//            }
+//            if (session != null && session.isConnected()) {
+//                session.disconnect();
+//                System.out.println("🔌 SFTP Session closed.");
+//            }
+//        }
+//    }
+    
+    public static void downloadFile() {
+        String remoteFilePath = REMOTE_UPLOAD_DIR + "file1.eps";
         String userHome = System.getProperty("user.home");
         System.out.println("Initializing connection to Synology NAS..." + userHome);
-        File folder = new File(userHome + "\\Downloads\\JOGDesktop");
-    	String localFilePath = folder.getPath();
-    	System.out.println("Downloaded path is  :  " + localFilePath);
+        // Define a safe directory with full access
+        File folder = new File(userHome + "\\Documents\\SFTPDownloads");
+        // Ensure the directory exists
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        // Use a unique filename to avoid conflicts
+        String localFilePath = folder.getPath() + "\\file1_" + System.currentTimeMillis() + ".eps";
+        System.out.println("Downloaded path is: " + localFilePath);
         Session session = null;
         ChannelSftp channel = null;
-
         try {
-        	
             JSch jsch = new JSch();
             session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
             session.setPassword(PASSWORD);
             session.setConfig("StrictHostKeyChecking", "no");
-            System.out.println("🔗 Connecting to SFTP...");
+            System.out.println(":link: Connecting to SFTP...");
             session.connect(15_000);
-
             channel = (ChannelSftp) session.openChannel("sftp");
             channel.connect(10_000);
-            System.out.println("✅ SFTP Connected!");
-
-            System.out.println("📥 Downloading file: " + remoteFilePath + " -> " + localFilePath);
-
+            System.out.println(":white_check_mark: SFTP Connected!");
+            System.out.println(":inbox_tray: Downloading file: " + remoteFilePath + " -> " + localFilePath);
+            // Use try-with-resources to ensure stream closure
             try (FileOutputStream fos = new FileOutputStream(localFilePath)) {
                 channel.get(remoteFilePath, fos);
             }
-
-            System.out.println("✅ Download successful!");
-
-
+            System.out.println(":white_check_mark: Download successful!");
         } catch (JSchException e) {
-            System.err.println("❌ SFTP Connection Error: " + e.getMessage());
+            System.err.println(":x: SFTP Connection Error: " + e.getMessage());
         } catch (SftpException e) {
-            System.err.println("❌ SFTP Download Error: " + e.getMessage());
+            System.err.println(":x: SFTP Download Error: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("❌ File Write Error: " + e.getMessage());
+            System.err.println(":x: File Write Error: " + e.getMessage());
         } finally {
             if (channel != null && channel.isConnected()) {
                 channel.disconnect();
-                System.out.println("🔌 SFTP Channel closed.");
+                System.out.println(":electric_plug: SFTP Channel closed.");
             }
             if (session != null && session.isConnected()) {
                 session.disconnect();
-                System.out.println("🔌 SFTP Session closed.");
+                System.out.println(":electric_plug: SFTP Session closed.");
             }
         }
     }
