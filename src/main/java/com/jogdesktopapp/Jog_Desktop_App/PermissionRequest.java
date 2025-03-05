@@ -11,7 +11,7 @@ public class PermissionRequest {
     private static void createFolderIfNotExits() { 
         String userHome = System.getProperty("user.home");
         System.out.println("Initializing connection to Synology NAS..." + userHome);
-        File folder = new File(userHome + "\\Public\\JOGDesktop");
+        File folder = new File(userHome + "\\Public\\JOG-Desktop");
 
         if (!folder.exists()) {
             boolean created = folder.mkdirs(); // Create folder
