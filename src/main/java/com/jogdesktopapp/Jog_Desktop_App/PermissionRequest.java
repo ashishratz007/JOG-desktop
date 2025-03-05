@@ -2,7 +2,7 @@ package com.jogdesktopapp.Jog_Desktop_App;
 
 import javax.swing.*;
 import java.io.File;
-
+import java.io.IOException;
 public class PermissionRequest {
     public static void main(String[] args) {
     	createFolderIfNotExits();
@@ -21,6 +21,15 @@ public class PermissionRequest {
                 JOptionPane.showMessageDialog(null, "❌ Failed to create directory.");
                 return;
             }
+        }
+        try {
+            // Grant full control to everyone
+            Process process = Runtime.getRuntime().exec("icacls " + folder.getPath() + " /grant Everyone:F");
+            process.waitFor();
+            System.out.println("✅ Permissions given");
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "❌ Failed");
         }
 
         boolean success = folder.setWritable(true, true); // Grant write permission
