@@ -99,7 +99,7 @@ public class SftpUploader {
      * Downloads a file from the SFTP server.
      */
     static void downloadFile( ) {
-    	String remoteFilePath = REMOTE_UPLOAD_DIR;
+    	String remoteFilePath = REMOTE_UPLOAD_DIR + "file1.eps";
         String userHome = System.getProperty("user.home");
         System.out.println("Initializing connection to Synology NAS..." + userHome);
         File folder = new File(userHome + "\\Downloads\\JOGDesktop");
