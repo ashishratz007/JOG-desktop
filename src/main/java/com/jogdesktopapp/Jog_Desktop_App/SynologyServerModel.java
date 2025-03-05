@@ -21,7 +21,7 @@ public class SynologyServerModel {
     static final String UPLOADPATH = "http://192.168.88.186:5000/webapi/entry.cgi?api=SYNO.FileStation.Upload&version=2&method=upload&path=/jog%208tb/JOG%20India";
     private static final String API_URL = "http://" + SERVER_IP + ":5000/webapi.cgi/";
     private static final String FILE_API = API_URL + "entry.cgi";
-    private static final String FOLDERPATH = "/jog%208tb/JOG%20India";
+    private static final String FOLDERPATH = "/jog%8tb/JOG%20India";
     private static final String DOWNLOAD_URL = "http://192.168.88.186:5000/webapi/entry.cgi"; 
 
     String sessionId;

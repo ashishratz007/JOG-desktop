@@ -102,7 +102,7 @@ public class SftpUploader {
     	String remoteFilePath = REMOTE_UPLOAD_DIR;
         String userHome = System.getProperty("user.home");
         System.out.println("Initializing connection to Synology NAS..." + userHome);
-        File folder = new File(userHome + "\\Documents\\JOGDesktop");
+        File folder = new File(userHome + "\\Downloads\\JOGDesktop");
     	String localFilePath = folder.getPath();
     	System.out.println("Downloaded path is  :  " + localFilePath);
         Session session = null;
