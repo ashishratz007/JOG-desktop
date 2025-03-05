@@ -8,9 +8,53 @@ import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class NasServer {
+public class NasServer implements SftpUploaderListener {
+	
+	private JPanel statusLabel;
+	
+	@Override
+	public void onStatusChanged(SftpUploaderStatus newStatus) {
+	    SwingUtilities.invokeLater(() -> {
+	       setStatusPanel(newStatus);
+	    });
+	}
+	
+	void setStatusPanel(SftpUploaderStatus newStatus){
+		 statusLabel = new JPanel();
+	        statusLabel.setLayout(new GridBagLayout()); // Center content
+	        statusLabel.setPreferredSize(new Dimension(120, 20));
+	        statusLabel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); // Blue border
 
+	        JLabel connectedLabel = new JLabel();
+	        connectedLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+	        
+	        // Update UI based on status
+	        switch (newStatus) {
+	            case UPLOADING:
+	            	statusLabel.setBackground(Color.YELLOW);
+	                connectedLabel.setForeground(Color.WHITE);
+	                connectedLabel.setText("Uploading...");
+	                break;
+	            case DOWNLOADING:
+	            	statusLabel.setBackground(Color.BLUE);
+	                connectedLabel.setForeground(Color.WHITE);
+	                connectedLabel.setText("Downloading...");
+	                break;
+	            default: // IDLE state
+	            	statusLabel.setBackground(Color.WHITE);
+	                connectedLabel.setForeground(AppColors.BlueBorder);
+	                connectedLabel.setText("Idle");
+	                break;
+	        }
+	        statusLabel.add(connectedLabel);
+	        
+	      
+	}
+
+	
     public JPanel view() {
+    	App.sftpClient.addListener(this);
+    	setStatusPanel(SftpUploaderStatus.IDLE);
     	JPanel frame = new JPanel();
     	frame.setBackground(Color.WHITE);
         frame.setLayout(new BorderLayout());
@@ -29,21 +73,11 @@ public class NasServer {
         statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.Y_AXIS));
         statusPanel.setBackground(Color.LIGHT_GRAY);
 
-     // "Connected" Label Container
-        JPanel connectedContainer = new JPanel();
-        connectedContainer.setLayout(new GridBagLayout()); // Center content
-        connectedContainer.setPreferredSize(new Dimension(120, 20));
-        connectedContainer.setBackground(Color.WHITE);
-        connectedContainer.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); // Blue border
-
-        JLabel connectedLabel = new JLabel("Connected");
-        connectedLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        connectedLabel.setForeground(AppColors.BlueBorder); // Set text color to AppColors.Blue
-
-        connectedContainer.add(connectedLabel); // Centered inside
+     
+        
 
         // IP Label (Placed in a row after "Connected")
-        JLabel ipLabel = new JLabel("IP: 123.121.132:8080");
+        JLabel ipLabel = new JLabel("IP:" + App.sftpClient.SFTP_HOST);
         ipLabel.setForeground(Color.BLUE);
         ipLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -51,7 +85,7 @@ public class NasServer {
         JPanel statusAware = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         statusAware.setBackground(AppColors.BACKGROUND_GREY);
 //        statusAware.setBorder(new EmptyBorder(5, 5, 5, 5));
-        statusAware.add(connectedContainer);
+        statusAware.add(statusLabel); // "Status" Label Container
         statusAware.add(ipLabel);
         titlePanel.add(statusAware, BorderLayout.EAST);
 

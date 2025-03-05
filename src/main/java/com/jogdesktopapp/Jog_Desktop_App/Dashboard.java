@@ -111,9 +111,79 @@ class Printers {
     }
 }
 
-class NASServerInfo {
+class NASServerInfo implements SftpUploaderListener {
 
+	private JPanel statusPanel;
+	
+	@Override
+	public void onStatusChanged(SftpUploaderStatus newStatus) {
+	    SwingUtilities.invokeLater(() -> {
+	    	setStatusPanel(newStatus);
+	    });
+	}
+	
+	void setStatusPanel(SftpUploaderStatus newStatus){
+		  statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5)); // Left-aligned with padding
+	        statusPanel.setPreferredSize(new Dimension(0, 50)); // Set height to 70px
+	        statusPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30)); // Ensure it stretches
+	        statusPanel.setBackground(AppColors.GREEN); // Green Background
+
+	        // White Dot Indicator (Circular)
+	        JPanel whiteDot = new JPanel();
+	        whiteDot.setPreferredSize(new Dimension(2, 2)); // Size increased to make it fully circular
+	        whiteDot.setBackground(Color.WHITE);
+	        whiteDot.setOpaque(true);
+	        whiteDot.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Black outline
+
+	        // Make it circular
+	        whiteDot.setLayout(null);
+	        whiteDot.setBorder(BorderFactory.createEmptyBorder());
+	        whiteDot.setSize(2, 2);
+
+	        // Make sure the dot is fully circular by overriding paintComponent
+	        whiteDot = new JPanel() {
+	            @Override
+	            protected void paintComponent(Graphics g) {
+	                super.paintComponent(g);
+	                g.setColor(Color.WHITE);
+	                g.fillOval(0, 0, getWidth(), getHeight()); // Draw filled circle
+	            }
+
+	            @Override
+	            public Dimension getPreferredSize() {
+	                return new Dimension(5, 5);
+	            }
+	        };
+	        whiteDot.setBackground(new Color(0, 153, 0)); // Match background
+	        whiteDot.setOpaque(false);
+
+	        JLabel connectedLabel = new JLabel("Connected", SwingConstants.CENTER);
+	        connectedLabel.setForeground(Color.WHITE);
+	        connectedLabel.setFont(new Font("Arial", Font.BOLD, 14));
+	        
+	     // Update background color and text based on status
+	        switch (newStatus) {
+	            case UPLOADING:
+	                statusPanel.setBackground(Color.YELLOW);
+	                connectedLabel.setText("Uploading...");
+	                break;
+	            case DOWNLOADING:
+	                statusPanel.setBackground(Color.BLUE);
+	                connectedLabel.setText("Downloading...");
+	                break;
+	            default: // IDLE or any other state
+	                statusPanel.setBackground(AppColors.GREEN);
+	                connectedLabel.setText("IDLE");
+	                break;
+	        }
+
+	        statusPanel.add(whiteDot);
+	        statusPanel.add(connectedLabel);
+	      
+	}
+	
     public JPanel view() {
+    	setStatusPanel(SftpUploaderStatus.IDLE);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBackground(AppColors.BACKGROUND_GREY);
@@ -126,7 +196,7 @@ class NASServerInfo {
         ipPanel.setBackground(Color.WHITE);
         ipPanel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); // Border
 
-        JLabel ipLabel = new JLabel("IP: 123890:097890:0890", SwingConstants.CENTER);
+        JLabel ipLabel = new JLabel("IP: "+ App.sftpClient.SFTP_HOST , SwingConstants.CENTER);
         ipLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         ipLabel.setForeground(AppColors.BlueText); // Apply custom color
 
@@ -136,48 +206,8 @@ class NASServerInfo {
         // Spacer
         mainPanel.add(Box.createVerticalStrut(20)); // Space between containers
 
-        // Second Container (Connected Status)
-        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5)); // Left-aligned with padding
-        statusPanel.setPreferredSize(new Dimension(0, 50)); // Set height to 70px
-        statusPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30)); // Ensure it stretches
-        statusPanel.setBackground(AppColors.GREEN); // Green Background
-
-        // White Dot Indicator (Circular)
-        JPanel whiteDot = new JPanel();
-        whiteDot.setPreferredSize(new Dimension(2, 2)); // Size increased to make it fully circular
-        whiteDot.setBackground(Color.WHITE);
-        whiteDot.setOpaque(true);
-        whiteDot.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Black outline
-
-        // Make it circular
-        whiteDot.setLayout(null);
-        whiteDot.setBorder(BorderFactory.createEmptyBorder());
-        whiteDot.setSize(2, 2);
-
-        // Make sure the dot is fully circular by overriding paintComponent
-        whiteDot = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.setColor(Color.WHITE);
-                g.fillOval(0, 0, getWidth(), getHeight()); // Draw filled circle
-            }
-
-            @Override
-            public Dimension getPreferredSize() {
-                return new Dimension(5, 5);
-            }
-        };
-        whiteDot.setBackground(new Color(0, 153, 0)); // Match background
-        whiteDot.setOpaque(false);
-
-        JLabel connectedLabel = new JLabel("Connected", SwingConstants.CENTER);
-        connectedLabel.setForeground(Color.WHITE);
-        connectedLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
-        statusPanel.add(whiteDot);
-        statusPanel.add(connectedLabel);
-
+        // Second Container (actions Status)
+    
         mainPanel.add(statusPanel);
 
         return mainPanel;

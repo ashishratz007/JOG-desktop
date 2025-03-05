@@ -14,7 +14,7 @@ import java.io.*;
 import java.nio.file.Files;
 
 public class SynologyServerModel {
-    private static SynologyServerModel instance;
+    static SynologyServerModel instance;
     private static final String SERVER_IP = "192.168.88.186";
     private static final String USERNAME = "Synology0822";
     private static final String PASSWORD = "InstallSUB2025";

@@ -2,109 +2,82 @@ package com.jogdesktopapp.Jog_Desktop_App;
 
 import com.jcraft.jsch.*;
 
+import javax.swing.*;
 import java.io.*;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SftpUploader {
+    
+    private static SftpUploader instance;
+    private static SftpUploaderStatus currentStatus = SftpUploaderStatus.IDLE;
+    
+    // List of listeners
+    private final List<SftpUploaderListener> listeners = new ArrayList<>();
 
-    // Configurable variables (adjust these for your setup)
-    private static final String SFTP_HOST = "192.168.88.186"; // SFTP server URL
-    private static final int SFTP_PORT = 22; // SFTP port
-    private static final String REMOTE_UPLOAD_DIR = "/JOG 8TB/JOG India"; // Remote directory (removed % encoding)
-    private static final String USERNAME = "Synology0822"; 
-    private static final String PASSWORD = "InstallSUB2025"; // Store securely
+    // SFTP Configuration
+    final String SFTP_HOST = "192.168.88.186";
+    private final int SFTP_PORT = 22;
+    private final String REMOTE_UPLOAD_DIR = "/JOG 8TB/JOG India";
+    private final String USERNAME = "Synology0822";
+    private final String PASSWORD = "InstallSUB2025"; // Store securely
+
+    // Singleton instance
+    public static SftpUploader getInstance() {
+        if (instance == null) {
+            instance = new SftpUploader();
+        }
+        return instance;
+    }
+
+    /**
+     * Adds a listener to observe status changes.
+     */
+    public void addListener(SftpUploaderListener listener) {
+        listeners.add(listener);
+    }
+
+    /**
+     * Removes a listener.
+     */
+    public void removeListener(SftpUploaderListener listener) {
+        listeners.remove(listener);
+    }
+
+    /**
+     * Notifies all registered listeners about a status update.
+     */
+    private void notifyStatusChange(SftpUploaderStatus newStatus) {
+        currentStatus = newStatus;
+        for (SftpUploaderListener listener : listeners) {
+            listener.onStatusChanged(newStatus);
+        }
+    }
 
     /**
      * Opens a file picker dialog and uploads the selected file via SFTP.
      */
-    public static void pickAndUploadFile() {
+    public void pickAndUploadFile() {
         JFileChooser fileChooser = new JFileChooser();
         int returnValue = fileChooser.showOpenDialog(null);
 
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             String localFilePath = selectedFile.getAbsolutePath();
-            String remoteFilePath = REMOTE_UPLOAD_DIR + "/" + selectedFile.getName(); // Keep original filename
+            String remoteFilePath = REMOTE_UPLOAD_DIR + "/" + selectedFile.getName();
 
+            notifyStatusChange(SftpUploaderStatus.UPLOADING);
             boolean success = uploadFile(localFilePath, remoteFilePath);
-            if (success) {
-                JOptionPane.showMessageDialog(null, "✅ File uploaded successfully!");
-            } else {
-                JOptionPane.showMessageDialog(null, "❌ Failed to upload file.");
-            }
+            notifyStatusChange(SftpUploaderStatus.IDLE);
+
+            JOptionPane.showMessageDialog(null, success ? "✅ File uploaded successfully!" : "❌ Failed to upload file.");
         }
     }
 
     /**
-     * Uploads a file to the SFTP server with improved error handling and debugging.
+     * Uploads a file to the SFTP server.
      */
-    private static boolean uploadFile(String localFilePath, String remoteFilePath) {
-        Session session = null;
-        ChannelSftp channel = null;
-
-        try {
-            JSch jsch = new JSch();
-            
-            // Enable JSch debugging
-            JSch.setLogger(new Logger() {
-                public boolean isEnabled(int level) { return true; }
-                public void log(int level, String message) { System.out.println("[JSch] " + message); }
-            });
-
-            session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
-            session.setPassword(PASSWORD);
-            session.setConfig("StrictHostKeyChecking", "no"); // Disable host checking for testing
-            System.out.println("🔗 Connecting to SFTP...");
-            session.connect(15_000); // Timeout in 15 sec
-
-            channel = (ChannelSftp) session.openChannel("sftp");
-            channel.connect(10_000); // Timeout in 10 sec
-            System.out.println("✅ SFTP Connected!");
-
-            // Check if the remote directory exists
-            try {
-                channel.ls(REMOTE_UPLOAD_DIR);
-            } catch (SftpException e) {
-                System.err.println("❌ Remote directory does not exist or no permission: " + REMOTE_UPLOAD_DIR);
-                return false;
-            }
-
-            System.out.println("📤 Uploading file: " + localFilePath + " -> " + remoteFilePath);
-            
-            channel.put(localFilePath, remoteFilePath, ChannelSftp.OVERWRITE);
-            System.out.println("✅ Upload successful!");
-
-            return true;
-
-        } catch (JSchException e) {
-            System.err.println("❌ SFTP Connection Error: " + e.getMessage());
-        } catch (SftpException e) {
-            System.err.println("❌ SFTP Upload Error: " + e.getMessage());
-        } finally {
-            if (channel != null) {
-                channel.disconnect();
-                System.out.println("SFTP Channel closed.");
-            }
-            if (session != null) {
-                session.disconnect();
-                System.out.println("SFTP Session closed.");
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Downloads a file from the SFTP server.
-     */
-    static void downloadFile( ) {
-    	String remoteFilePath = REMOTE_UPLOAD_DIR ;
-        String userHome = System.getProperty("user.home");
-        System.out.println("Initializing connection to Synology NAS..." + userHome);
-        String path  = userHome + "\\Public\\JOG-Desktop";
-    	String localFilePath = path;
-    	System.out.println("Downloaded path is  :  " + localFilePath);
+    private boolean uploadFile(String localFilePath, String remoteFilePath) {
         Session session = null;
         ChannelSftp channel = null;
 
@@ -113,39 +86,81 @@ public class SftpUploader {
             session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
             session.setPassword(PASSWORD);
             session.setConfig("StrictHostKeyChecking", "no");
-            System.out.println("🔗 Connecting to SFTP...");
             session.connect(15_000);
 
             channel = (ChannelSftp) session.openChannel("sftp");
             channel.connect(10_000);
-            System.out.println("✅ SFTP Connected!");
 
-            System.out.println("📥 Downloading file: " + remoteFilePath + " -> " + localFilePath);
+            // Check remote directory
+            try {
+                channel.ls(REMOTE_UPLOAD_DIR);
+            } catch (SftpException e) {
+            	notifyStatusChange(SftpUploaderStatus.IDLE);
+                System.err.println("❌ Remote directory does not exist or no permission.");
+                return false;
+            }
+
+            channel.put(localFilePath, remoteFilePath, ChannelSftp.OVERWRITE);
+            return true;
+
+        } catch (JSchException | SftpException e) {
+            System.err.println("❌ SFTP Error: " + e.getMessage());
+        } finally {
+            if (channel != null) channel.disconnect();
+            if (session != null) session.disconnect();
+        }
+        return false;
+    }
+
+    /**
+     * Downloads a file from the SFTP server.
+     */
+    public void downloadFile() {
+    	 notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
+        
+        String remoteFilePath = REMOTE_UPLOAD_DIR + "/file1.eps";
+        String[] dataSplit = remoteFilePath.split("/");
+        String fileName = dataSplit[dataSplit.length - 1];
+        String userHome = System.getProperty("user.home");
+        String localFilePath = userHome + "\\Public\\JOG-Desktop\\" + fileName;
+
+        Session session = null;
+        ChannelSftp channel = null;
+
+        try {
+            JSch jsch = new JSch();
+            session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
+            session.setPassword(PASSWORD);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.connect(15_000);
+
+            channel = (ChannelSftp) session.openChannel("sftp");
+            channel.connect(10_000);
+
+            notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
 
             try (FileOutputStream fos = new FileOutputStream(localFilePath)) {
                 channel.get(remoteFilePath, fos);
             }
 
-            System.out.println("✅ Download successful!");
+            notifyStatusChange(SftpUploaderStatus.IDLE);
 
-
-        } catch (JSchException e) {
-            System.err.println("❌ SFTP Connection Error: " + e.getMessage());
-        } catch (SftpException e) {
+        } catch (JSchException | SftpException | IOException e) {
             System.err.println("❌ SFTP Download Error: " + e.getMessage());
-        } catch (IOException e) {
-            System.err.println("❌ File Write Error: " + e.getMessage());
         } finally {
-            if (channel != null && channel.isConnected()) {
-                channel.disconnect();
-                System.out.println("🔌 SFTP Channel closed.");
-            }
-            if (session != null && session.isConnected()) {
-                session.disconnect();
-                System.out.println("🔌 SFTP Session closed.");
-            }
+        	notifyStatusChange(SftpUploaderStatus.IDLE);
+            if (channel != null) channel.disconnect();
+            if (session != null) session.disconnect();
         }
     }
-    
-    
+}
+
+// Enum to track the status of operations
+enum SftpUploaderStatus {
+    IDLE, UPLOADING, DOWNLOADING
+}
+
+// Listener interface for UI updates
+interface SftpUploaderListener {
+    void onStatusChanged(SftpUploaderStatus newStatus);
 }
