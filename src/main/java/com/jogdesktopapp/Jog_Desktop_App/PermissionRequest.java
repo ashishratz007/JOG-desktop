@@ -11,7 +11,7 @@ public class PermissionRequest {
     private static void createFolderIfNotExits() { 
         String userHome = System.getProperty("user.home");
         System.out.println("Initializing connection to Synology NAS..." + userHome);
-        File folder = new File(userHome + "\\Downloads\\JOGDesktop");
+        File folder = new File(userHome + "\\Public\\JOGDesktop");
 
         if (!folder.exists()) {
             boolean created = folder.mkdirs(); // Create folder
@@ -26,7 +26,7 @@ public class PermissionRequest {
             // Grant full control to everyone
             Process process = Runtime.getRuntime().exec("icacls " + folder.getPath() + " /grant Everyone:F");
             process.waitFor();
-            System.out.println("✅ Permissions given");
+            System.out.println("✅ Permissions gi");
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "❌ Failed");
