@@ -10,6 +10,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 class AppFrame extends JFrame {
     private JPanel contentPanel; // Main content panel for displaying views
@@ -83,8 +85,26 @@ class AppFrame extends JFrame {
         statusLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-            	 System.out.println("Clicked event");
-            	 App.sftpClient.downloadFile();
+                System.out.println("Clicked event");
+
+                new SwingWorker<Void, String>() {
+                    @Override
+                    protected Void doInBackground() {
+                        // Update UI before starting
+//                        SwingUtilities.invokeLater(() -> statusLabel.setText("Downloading..."));
+
+                        // Perform long-running task (SFTP download)
+                        App.sftpClient.downloadFile();
+
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        // Update UI when download completes
+                        statusLabel.setText("Online");
+                    }
+                }.execute();
             }
         });
 

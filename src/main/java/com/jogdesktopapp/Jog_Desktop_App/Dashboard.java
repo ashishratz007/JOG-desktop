@@ -113,49 +113,24 @@ class Printers {
 
 class NASServerInfo implements SftpUploaderListener {
 
-	private JPanel statusPanel;
+	private JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
 	
 	@Override
 	public void onStatusChanged(SftpUploaderStatus newStatus) {
+//		System.err.println("❌ Status Received:" + newStatus);
 	    SwingUtilities.invokeLater(() -> {
 	    	setStatusPanel(newStatus);
 	    });
 	}
 	
 	void setStatusPanel(SftpUploaderStatus newStatus){
-		  statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5)); // Left-aligned with padding
+    	statusPanel.removeAll(); // Remove old content
+    	statusPanel.setLayout(new GridBagLayout()); 
+    	statusPanel.setPreferredSize(new Dimension(120, 20));
+    	statusPanel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); 
 	        statusPanel.setPreferredSize(new Dimension(0, 50)); // Set height to 70px
 	        statusPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30)); // Ensure it stretches
 	        statusPanel.setBackground(AppColors.GREEN); // Green Background
-
-	        // White Dot Indicator (Circular)
-	        JPanel whiteDot = new JPanel();
-	        whiteDot.setPreferredSize(new Dimension(2, 2)); // Size increased to make it fully circular
-	        whiteDot.setBackground(Color.WHITE);
-	        whiteDot.setOpaque(true);
-	        whiteDot.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Black outline
-
-	        // Make it circular
-	        whiteDot.setLayout(null);
-	        whiteDot.setBorder(BorderFactory.createEmptyBorder());
-	        whiteDot.setSize(2, 2);
-
-	        // Make sure the dot is fully circular by overriding paintComponent
-	        whiteDot = new JPanel() {
-	            @Override
-	            protected void paintComponent(Graphics g) {
-	                super.paintComponent(g);
-	                g.setColor(Color.WHITE);
-	                g.fillOval(0, 0, getWidth(), getHeight()); // Draw filled circle
-	            }
-
-	            @Override
-	            public Dimension getPreferredSize() {
-	                return new Dimension(5, 5);
-	            }
-	        };
-	        whiteDot.setBackground(new Color(0, 153, 0)); // Match background
-	        whiteDot.setOpaque(false);
 
 	        JLabel connectedLabel = new JLabel("Connected", SwingConstants.CENTER);
 	        connectedLabel.setForeground(Color.WHITE);
@@ -176,14 +151,16 @@ class NASServerInfo implements SftpUploaderListener {
 	                connectedLabel.setText("IDLE");
 	                break;
 	        }
-
-	        statusPanel.add(whiteDot);
+	        
 	        statusPanel.add(connectedLabel);
+	        statusPanel.revalidate();
+	        statusPanel.repaint();
 	      
 	}
 	
     public JPanel view() {
-    	setStatusPanel(SftpUploaderStatus.IDLE);
+    	App.sftpClient.addListener(this);
+    	setStatusPanel(App.sftpClient.currentStatus);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBackground(AppColors.BACKGROUND_GREY);

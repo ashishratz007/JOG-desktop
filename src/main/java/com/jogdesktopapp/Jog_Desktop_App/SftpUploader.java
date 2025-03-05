@@ -10,7 +10,7 @@ import java.util.List;
 public class SftpUploader {
     
     private static SftpUploader instance;
-    private static SftpUploaderStatus currentStatus = SftpUploaderStatus.IDLE;
+    static SftpUploaderStatus currentStatus = SftpUploaderStatus.IDLE;
     
     // List of listeners
     private final List<SftpUploaderListener> listeners = new ArrayList<>();
@@ -49,6 +49,7 @@ public class SftpUploader {
      */
     private void notifyStatusChange(SftpUploaderStatus newStatus) {
         currentStatus = newStatus;
+//        System.err.println("❌ Status changed to:" + currentStatus);
         for (SftpUploaderListener listener : listeners) {
             listener.onStatusChanged(newStatus);
         }
@@ -116,8 +117,8 @@ public class SftpUploader {
      * Downloads a file from the SFTP server.
      */
     public void downloadFile() {
-    	 notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
-        
+    	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
+    	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
         String remoteFilePath = REMOTE_UPLOAD_DIR + "/file1.eps";
         String[] dataSplit = remoteFilePath.split("/");
         String fileName = dataSplit[dataSplit.length - 1];

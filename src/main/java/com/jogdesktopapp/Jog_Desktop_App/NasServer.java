@@ -10,51 +10,54 @@ import java.util.Date;
 
 public class NasServer implements SftpUploaderListener {
 	
-	private JPanel statusLabel;
+	private JPanel statusLabel = new JPanel();
 	
 	@Override
 	public void onStatusChanged(SftpUploaderStatus newStatus) {
-	    SwingUtilities.invokeLater(() -> {
-	       setStatusPanel(newStatus);
+//		 System.err.println("❌ Status Received:" + newStatus);
+		SwingUtilities.invokeLater(() -> {
+			setStatusPanel(newStatus);
 	    });
 	}
 	
-	void setStatusPanel(SftpUploaderStatus newStatus){
-		 statusLabel = new JPanel();
-	        statusLabel.setLayout(new GridBagLayout()); // Center content
+	void setStatusPanel(SftpUploaderStatus newStatus) {
+		   statusLabel.removeAll(); // Remove old content
+	        statusLabel.setLayout(new GridBagLayout()); 
 	        statusLabel.setPreferredSize(new Dimension(120, 20));
-	        statusLabel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); // Blue border
+	        statusLabel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); 
 
 	        JLabel connectedLabel = new JLabel();
 	        connectedLabel.setFont(new Font("Arial", Font.PLAIN, 10));
-	        
-	        // Update UI based on status
+
 	        switch (newStatus) {
 	            case UPLOADING:
-	            	statusLabel.setBackground(Color.YELLOW);
+	                statusLabel.setBackground(Color.YELLOW);
 	                connectedLabel.setForeground(Color.WHITE);
 	                connectedLabel.setText("Uploading...");
 	                break;
 	            case DOWNLOADING:
-	            	statusLabel.setBackground(Color.BLUE);
+	                statusLabel.setBackground(Color.BLUE);
 	                connectedLabel.setForeground(Color.WHITE);
 	                connectedLabel.setText("Downloading...");
 	                break;
-	            default: // IDLE state
-	            	statusLabel.setBackground(Color.WHITE);
+	            default:
+	                statusLabel.setBackground(Color.WHITE);
 	                connectedLabel.setForeground(AppColors.BlueBorder);
 	                connectedLabel.setText("Idle");
 	                break;
 	        }
+
 	        statusLabel.add(connectedLabel);
-	        
-	      
+	        statusLabel.revalidate();
+	        statusLabel.repaint();
 	}
 
-	
+
     public JPanel view() {
     	App.sftpClient.addListener(this);
-    	setStatusPanel(SftpUploaderStatus.IDLE);
+    	
+    	setStatusPanel(App.sftpClient.currentStatus); 
+    	
     	JPanel frame = new JPanel();
     	frame.setBackground(Color.WHITE);
         frame.setLayout(new BorderLayout());
@@ -72,10 +75,6 @@ public class NasServer implements SftpUploaderListener {
         JPanel statusPanel = new JPanel();
         statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.Y_AXIS));
         statusPanel.setBackground(Color.LIGHT_GRAY);
-
-     
-        
-
         // IP Label (Placed in a row after "Connected")
         JLabel ipLabel = new JLabel("IP:" + App.sftpClient.SFTP_HOST);
         ipLabel.setForeground(Color.BLUE);
