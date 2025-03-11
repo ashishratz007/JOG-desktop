@@ -66,13 +66,14 @@ public class SocketModel extends WebSocketClient {
         String action = parseAction(message);
         switch (action) {
             case "upload_files":
-            	List<UploadFile> pendingFiles = new ArrayList<>();
+            
                 System.out.println("📤 Handling file upload action");
                 JSONObject json = new JSONObject(message);
                 JSONArray filePathsArray = json.optJSONArray("file_paths");
                 JSONArray fileIdsArray = json.optJSONArray("file_ids");
 
                 if (filePathsArray != null && fileIdsArray != null) {
+                	List<UploadFile> pendingFiles = new ArrayList<>();
                     for (int i = 0; i < filePathsArray.length(); i++) {
                         String filePath = filePathsArray.optString(i);
                         String fileId = fileIdsArray.optString(i);
@@ -81,10 +82,11 @@ public class SocketModel extends WebSocketClient {
                         System.out.println("📤 adding file");
                         
                     }
+                    App.sftpClient.addFiles(pendingFiles); 
                 } else {
                     System.out.println("⚠️ No file paths or file IDs found.");
                 }
-                App.sftpClient.addFiles(pendingFiles); 
+               
                 break;
             case "ACTION_CONNECT":
                 System.out.println("🔗 Handling connect action");
