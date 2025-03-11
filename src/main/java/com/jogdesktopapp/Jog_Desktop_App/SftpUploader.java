@@ -107,8 +107,8 @@ public class SftpUploader {
     	File selectedFile = new File(localPath);
         String localFilePath = selectedFile.getAbsolutePath();
          String[] paths =  localFilePath.split("/");  
-         String exName = paths[(paths.length - 3)]; 
-        String remoteFilePath = REMOTE_UPLOAD_DIR + "/"+ exName + "/"+ selectedFile.getName();
+//         String exName = paths[(paths.length - 3)]; 
+        String remoteFilePath = REMOTE_UPLOAD_DIR + "/" + selectedFile.getName();
         Session session = null;
         ChannelSftp channel = null;
         notifyStatusChange(SftpUploaderStatus.UPLOADING);
