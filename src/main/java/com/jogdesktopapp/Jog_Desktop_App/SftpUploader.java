@@ -52,6 +52,7 @@ public class SftpUploader {
             boolean success = uploadFile(currentFile.getPath());
 
             if (success) {
+            	currentFile = null;
                 System.out.println("✅ Uploaded: " + currentFile.getPath());
                 pendingUpload.remove(0); // Remove after successful upload
             } else {
@@ -72,7 +73,7 @@ public class SftpUploader {
     	}
     }
     
-    public void addFiles(List<UploadFile> newFiles) {
+    public void addFiles(List<UploadFile> newFiles) { 
     	pendingUpload.addAll(newFiles); 
     	if(currentFile == null) {
     		 System.out.println("📤 Uplaoding files");
