@@ -39,15 +39,41 @@ public class SftpUploader {
      * Upload function if there is any pending upload left.
      */
     
-    public void uploadFiles(){
-    	for(int i = 0 ; i < pendingUpload.size(); i++ ) {
-    		currentFile =  pendingUpload.get(i);
-    		uploadFile(currentFile.getPath());
-    	}
+    public void uploadFiles() {
+        if (pendingUpload.isEmpty()) {
+            System.out.println("📤 No files to upload.");
+            return;
+        }
+
+        System.out.println("📤 Starting batch upload...");
+
+        while (!pendingUpload.isEmpty()) {
+            currentFile = pendingUpload.get(0);
+            boolean success = uploadFile(currentFile.getPath());
+
+            if (success) {
+                System.out.println("✅ Uploaded: " + currentFile.getPath());
+                pendingUpload.remove(0); // Remove after successful upload
+            } else {
+                System.err.println("❌ Failed to upload: " + currentFile.getPath());
+                break; // Stop on failure to avoid infinite loop
+            }
+        }
+
+        System.out.println("📤 Upload complete.");
     }
+
     
     public void addFile(UploadFile newFile) {
     	pendingUpload.add(newFile);
+    	if(currentFile == null) {
+    		 System.out.println("📤 Uplaoding files");
+    		uploadFiles();
+    	}
+    }
+    
+    public void addFiles(List<UploadFile> newFiles) {
+    	pendingUpload.addAll(newFiles); 
     	if(currentFile == null) {
     		 System.out.println("📤 Uplaoding files");
     		uploadFiles();

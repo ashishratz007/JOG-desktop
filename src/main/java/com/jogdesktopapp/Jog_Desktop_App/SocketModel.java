@@ -3,6 +3,8 @@ package com.jogdesktopapp.Jog_Desktop_App;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -64,6 +66,7 @@ public class SocketModel extends WebSocketClient {
         String action = parseAction(message);
         switch (action) {
             case "upload_files":
+            	List<UploadFile> pendingFiles = new ArrayList<>();
                 System.out.println("📤 Handling file upload action");
                 JSONObject json = new JSONObject(message);
                 JSONArray filePathsArray = json.optJSONArray("file_paths");
@@ -74,12 +77,14 @@ public class SocketModel extends WebSocketClient {
                         String filePath = filePathsArray.optString(i);
                         String fileId = fileIdsArray.optString(i);
                         UploadFile fileData = new UploadFile(fileId, filePath, "pending");
+                        pendingFiles.add(fileData);
                         System.out.println("📤 adding file");
-                        App.sftpClient.addFile(fileData); 
+                        
                     }
                 } else {
                     System.out.println("⚠️ No file paths or file IDs found.");
                 }
+                App.sftpClient.addFiles(pendingFiles); 
                 break;
             case "ACTION_CONNECT":
                 System.out.println("🔗 Handling connect action");
