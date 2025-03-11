@@ -74,6 +74,7 @@ public class SocketModel extends WebSocketClient {
                         String filePath = filePathsArray.optString(i);
                         String fileId = fileIdsArray.optString(i);
                         UploadFile fileData = new UploadFile(fileId, filePath, "pending");
+                        System.out.println("📤 adding file");
                         App.sftpClient.addFile(fileData); 
                     }
                 } else {

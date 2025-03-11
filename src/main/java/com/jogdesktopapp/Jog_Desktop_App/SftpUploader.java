@@ -49,6 +49,7 @@ public class SftpUploader {
     public void addFile(UploadFile newFile) {
     	pendingUpload.add(newFile);
     	if(currentFile == null) {
+    		 System.out.println("📤 Uplaoding files");
     		uploadFiles();
     	}
     }
@@ -103,7 +104,7 @@ public class SftpUploader {
      * Uploads a file to the SFTP server.
      */
     private boolean uploadFile(String localPath) {
-    	
+    	 System.out.println("📤 locating file");
     	File selectedFile = new File(localPath);
         String localFilePath = selectedFile.getAbsolutePath();
          String[] paths =  localFilePath.split("/");  
@@ -111,6 +112,7 @@ public class SftpUploader {
         String remoteFilePath = REMOTE_UPLOAD_DIR + "/" + selectedFile.getName();
         Session session = null;
         ChannelSftp channel = null;
+        System.out.println("📤 uploading action on file");
         notifyStatusChange(SftpUploaderStatus.UPLOADING);
         try {
             JSch jsch = new JSch();
