@@ -9,26 +9,12 @@ import java.net.URI;
 public class App {
 	 // Initialize socket connection
     static SocketModel socketModel = SocketModel.getInstance();
-//    private static MyWebSocketClient client;
-//    static SynologyServerModel synologyServer = SynologyServerModel.getInstance(); // Initialize the singleton
+    
+    /// storage server 
+    static SynologyServerModel synologyServer = SynologyServerModel.getInstance(); // Initialize the singleton
+    
     static SftpUploader sftpClient = SftpUploader.getInstance(); 
     public static void main(String[] args) {
-//    	try {
-//            // Change the URL to match your server
-//            URI serverUri = new URI("ws://socket.jog-joinourgame.com:8080");
-//
-//            // Initialize WebSocket client
-//            client = new MyWebSocketClient(serverUri);
-//            client.connectBlocking(); // Wait for connection
-//
-//            // Send a test message after connection
-//            if (client.isOpen()) {
-//                client.send("Hello from Java Main Class!");
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
     	PermissionRequest.main(args); 
         EventQueue.invokeLater(() -> {
             try {
