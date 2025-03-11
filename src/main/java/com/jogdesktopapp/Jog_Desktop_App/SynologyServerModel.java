@@ -37,6 +37,7 @@ public class SynologyServerModel {
     public static synchronized SynologyServerModel getInstance() {
         if (instance == null) {
             instance = new SynologyServerModel();
+            instance.init();
         }
         return instance;
     }

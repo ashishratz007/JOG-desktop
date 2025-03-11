@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 
 public class SftpUploader {
     
@@ -14,7 +15,11 @@ public class SftpUploader {
     
     // List of listeners
     private final List<SftpUploaderListener> listeners = new ArrayList<>();
-
+    
+    // LIST of files to be upload 
+    public List<UploadFile> pendingUpload = new ArrayList<>(); 
+    public UploadFile currentFile = null;
+      
     // SFTP Configuration
     final String SFTP_HOST = "192.168.88.186";
     private final int SFTP_PORT = 22;
@@ -30,6 +35,25 @@ public class SftpUploader {
         return instance;
     }
 
+    /**
+     * Upload function if there is any pending upload left.
+     */
+    
+    public void uploadFiles(){
+    	for(int i = 0 ; i < pendingUpload.size(); i++ ) {
+    		currentFile =  pendingUpload.get(i);
+    		
+    	}
+    }
+    
+    public void addFile(UploadFile newFile) {
+    	pendingUpload.add(newFile);
+    	if(currentFile == null) {
+    		uploadFiles();
+    	}
+    }
+    
+    
     /**
      * Adds a listener to observe status changes.
      */
@@ -68,7 +92,7 @@ public class SftpUploader {
             String remoteFilePath = REMOTE_UPLOAD_DIR + "/" + selectedFile.getName();
 
             notifyStatusChange(SftpUploaderStatus.UPLOADING);
-            boolean success = uploadFile(localFilePath, remoteFilePath);
+            boolean success = uploadFile(localFilePath);
             notifyStatusChange(SftpUploaderStatus.IDLE);
 
             JOptionPane.showMessageDialog(null, success ? "✅ File uploaded successfully!" : "❌ Failed to upload file.");
@@ -78,10 +102,16 @@ public class SftpUploader {
     /**
      * Uploads a file to the SFTP server.
      */
-    private boolean uploadFile(String localFilePath, String remoteFilePath) {
+    private boolean uploadFile(String localPath) {
+    	
+    	File selectedFile = new File(localPath);
+        String localFilePath = selectedFile.getAbsolutePath();
+         String[] paths =  localFilePath.split("/");  
+         String exName = paths[(paths.length - 3)]; 
+        String remoteFilePath = REMOTE_UPLOAD_DIR + "/"+ exName + "/"+ selectedFile.getName();
         Session session = null;
         ChannelSftp channel = null;
-
+        notifyStatusChange(SftpUploaderStatus.UPLOADING);
         try {
             JSch jsch = new JSch();
             session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
@@ -107,6 +137,7 @@ public class SftpUploader {
         } catch (JSchException | SftpException e) {
             System.err.println("❌ SFTP Error: " + e.getMessage());
         } finally {
+        	 notifyStatusChange(SftpUploaderStatus.IDLE);
             if (channel != null) channel.disconnect();
             if (session != null) session.disconnect();
         }
@@ -117,7 +148,7 @@ public class SftpUploader {
      * Downloads a file from the SFTP server.
      */
     public void downloadFile() {
-    	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
+    	
     	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
         String remoteFilePath = REMOTE_UPLOAD_DIR + "/file1.eps";
         String[] dataSplit = remoteFilePath.split("/");
@@ -165,3 +196,46 @@ enum SftpUploaderStatus {
 interface SftpUploaderListener {
     void onStatusChanged(SftpUploaderStatus newStatus);
 }
+
+
+
+  class UploadFile {
+    private String path;
+    private String id;
+    private String status;
+
+    public UploadFile( String id, String path, String status) {
+        this.path = path;
+        this.id = id;
+        this.status = status;
+    }
+
+    // Convert UploadFile object to JSON
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        json.put("path", path);
+        json.put("id", id);
+        json.put("status", status);
+        return json;
+    }
+
+    // Convert JSON to UploadFile object
+    public static UploadFile fromJson(JSONObject json) {
+        String path = json.optString("path", "");
+        String id = json.optString("id", "");
+        String status = json.optString("status", "pending"); // Default status
+        return new UploadFile(path, id, status);
+    }
+
+    // Method to update the file status
+    public void updateStatus(String newStatus) {
+        this.status = newStatus;
+        System.out.println("🔄 Status updated for File ID " + id + " to: " + newStatus);
+    }
+
+    // Getters
+    public String getPath() { return path; }
+    public String getId() { return id; }
+    public String getStatus() { return status; }
+}
+
