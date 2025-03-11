@@ -42,7 +42,7 @@ public class SftpUploader {
     public void uploadFiles(){
     	for(int i = 0 ; i < pendingUpload.size(); i++ ) {
     		currentFile =  pendingUpload.get(i);
-    		
+    		uploadFile(currentFile.getPath());
     	}
     }
     
