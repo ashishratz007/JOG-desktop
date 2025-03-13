@@ -71,6 +71,8 @@ public class SocketModel extends WebSocketClient {
                 JSONObject json = new JSONObject(message);
                 JSONArray filePathsArray = json.optJSONArray("file_paths");
                 JSONArray fileIdsArray = json.optJSONArray("file_ids");
+                JSONArray orderKeys = json.optJSONArray("order_code"); 
+                System.out.println("📤 Keys are:  " + orderKeys);
 
                 if (filePathsArray != null && fileIdsArray != null) {
                 	List<UploadFile> pendingFiles = new ArrayList<>();
