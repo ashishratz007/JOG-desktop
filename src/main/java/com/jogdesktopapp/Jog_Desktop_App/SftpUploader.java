@@ -52,6 +52,7 @@ public class SftpUploader {
             boolean success = uploadFile(currentFile.getPath());
 
             if (success) {
+
             	currentFile = null;
                 System.out.println("✅ Uploaded: " + currentFile.getPath());
                 pendingUpload.remove(0); // Remove after successful upload
@@ -154,6 +155,7 @@ public class SftpUploader {
             // Check remote directory
             try {
                 channel.ls(REMOTE_UPLOAD_DIR);
+            	ApiCalls.confirmUpload(currentFile.getId(), remoteFilePath);
             } catch (SftpException e) {
             	notifyStatusChange(SftpUploaderStatus.IDLE);
                 System.err.println("❌ Remote directory does not exist or no permission.");
