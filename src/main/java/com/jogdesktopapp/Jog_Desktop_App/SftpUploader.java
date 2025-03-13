@@ -53,7 +53,7 @@ public class SftpUploader {
 
             if (success) {
 
-            	currentFile = null;
+//            	currentFile = null;
                 System.out.println("✅ Uploaded: " + currentFile.getPath());
                 pendingUpload.remove(0); // Remove after successful upload
             } else {
