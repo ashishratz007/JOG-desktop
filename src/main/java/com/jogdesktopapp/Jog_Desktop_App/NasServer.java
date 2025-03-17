@@ -7,11 +7,12 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class NasServer implements SftpUploaderListener {
 	
 	private JPanel statusLabel = new JPanel();
-	private JPanel livePanel =  createTablePanel();
+	private JPanel livePanel =  createTablePanel(new Object[0][2]);
 	@Override
 	public void onStatusChanged(SftpUploaderStatus newStatus) {
 //		 System.err.println("❌ Status Received:" + newStatus);
@@ -22,14 +23,27 @@ public class NasServer implements SftpUploaderListener {
 	
 	@Override
 	public void onPendingChanged() {
-//		 System.err.println("❌ Status Received:" + newStatus);
-		SwingUtilities.invokeLater(() -> {
-			livePanel.removeAll();
-			livePanel = createTablePanel();
-			livePanel.revalidate();
-			livePanel.repaint();
+	    SwingUtilities.invokeLater(() -> {
+	        livePanel.removeAll();
+
+	        // Get the pending uploads
+	        List<UploadFile> pendingUpload = App.sftpClient.pendingUpload;
+
+	        // Convert pending uploads to table data
+	        Object[][] data = new Object[pendingUpload.size()][2];
+	        for (int i = 0; i < pendingUpload.size(); i++) {
+	            UploadFile file = pendingUpload.get(i);
+	            String fileName = file.getPath().substring(file.getPath().lastIndexOf("/") + 1); // Extract filename from path
+	            data[i][0] = fileName;
+	            data[i][1] = file.getPath();
+	        }
+
+	        livePanel = createTablePanel(data);
+	        livePanel.revalidate();
+	        livePanel.repaint();
 	    });
 	}
+
 	
 
 	void setStatusPanel(SftpUploaderStatus newStatus) {
@@ -110,8 +124,13 @@ public class NasServer implements SftpUploaderListener {
         // Set font size to 10
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 10));
         tabbedPane.addTab("Live", livePanel);
-        tabbedPane.addTab("Download", createTablePanel());
-        tabbedPane.addTab("Upload", createTablePanel());
+        Object[][] data = {
+                {"File1", "document1.pdf"},
+                {"File2", "image1.png"},
+                {"File3", "video1.mp4"}
+            };
+        tabbedPane.addTab("Download", createTablePanel(data));
+        tabbedPane.addTab("Upload", createTablePanel(data));
 
         // Custom Tab UI
         tabbedPane.setUI(new CustomTabUI()); // Apply custom UI
@@ -137,16 +156,12 @@ public class NasServer implements SftpUploaderListener {
         return frame;
     }
 
-    private JPanel createTablePanel() {
+    private JPanel createTablePanel(Object[][] data) { 
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
 
         String[] columnNames = {"Name", "Filename"};
-        Object[][] data = {
-            {"File1", "document1.pdf"},
-            {"File2", "image1.png"},
-            {"File3", "video1.mp4"}
-        };
+  
 
         JTable table = new JTable(new DefaultTableModel(data, columnNames)) {
             @Override
