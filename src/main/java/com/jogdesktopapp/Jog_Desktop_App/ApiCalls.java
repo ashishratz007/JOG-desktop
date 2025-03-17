@@ -45,6 +45,38 @@ public class ApiCalls {
         }
     }
     
+    // delete file if no exits
+    public static boolean deleteFile(String id) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/delete_files.php";
+        String jsonInputString = "{\"order_id\": \"" + id + "\"}";
+        
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+            	System.out.println("File removed");
+                return true;
+            } else {
+            	System.out.println("File remove error");
+                return false;
+            }
+        } catch (Exception e) {
+        	System.out.println("File remove Error");
+            return false;
+        }
+    }
     
     // Get pending files from API
     public static List<UploadFile> getPendingFiles() {
