@@ -21,14 +21,22 @@ public class NasServer implements SftpUploaderListener {
 	    });
 	}
 	
+    /**
+     changes the UI for the pending upload
+     */
 	@Override
 	public void onPendingChanged() {
 	    SwingUtilities.invokeLater(() -> {
-	        livePanel.removeAll();
+	    	fillPendingData();
+	    });
+	}
+	
+	 void fillPendingData(){
+		 livePanel.removeAll();
 
 	        // Get the pending uploads
 	        List<UploadFile> pendingUpload = App.sftpClient.pendingUpload;
-
+	        System.out.println("📤 pending notification invoked.");
 	        // Convert pending uploads to table data
 	        Object[][] data = new Object[pendingUpload.size()][2];
 	        for (int i = 0; i < pendingUpload.size(); i++) {
@@ -37,11 +45,9 @@ public class NasServer implements SftpUploaderListener {
 	            data[i][0] = fileName;
 	            data[i][1] = file.getPath();
 	        }
-
 	        livePanel = createTablePanel(data);
 	        livePanel.revalidate();
 	        livePanel.repaint();
-	    });
 	}
 
 	
@@ -51,7 +57,7 @@ public class NasServer implements SftpUploaderListener {
 	        statusLabel.setLayout(new GridBagLayout()); 
 	        statusLabel.setPreferredSize(new Dimension(120, 20));
 	        statusLabel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); 
-
+	        fillPendingData();
 	        JLabel connectedLabel = new JLabel();
 	        connectedLabel.setFont(new Font("Arial", Font.PLAIN, 10));
 
