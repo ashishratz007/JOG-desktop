@@ -46,6 +46,7 @@ public class SftpUploader {
     
     void getPendingFiles() {
     	 pendingUpload =  ApiCalls.getPendingFiles();
+    	 uploadFiles();
     }
 
     /**
