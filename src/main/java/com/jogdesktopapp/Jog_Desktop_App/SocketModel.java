@@ -80,7 +80,7 @@ public class SocketModel extends WebSocketClient {
                     for (int i = 0; i < filePathsArray.length(); i++) {
                         String filePath = filePathsArray.optString(i);
                         String fileId = fileIdsArray.optString(i);
-                        UploadFile fileData = new UploadFile(fileId, filePath, "pending");
+                        UploadFile fileData = new UploadFile(fileId, filePath, "pending",orderCode);
                         pendingFiles.add(fileData);
                         System.out.println("📤 adding file");
                         

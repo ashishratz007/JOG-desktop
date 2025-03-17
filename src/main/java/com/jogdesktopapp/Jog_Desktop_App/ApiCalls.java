@@ -1,8 +1,15 @@
 package com.jogdesktopapp.Jog_Desktop_App;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class ApiCalls {
     
@@ -37,4 +44,49 @@ public class ApiCalls {
             return "Error: " + e.getMessage();
         }
     }
+    
+    
+    // Get pending files from API
+    public static List<UploadFile> getPendingFiles() {
+        List<UploadFile> pendingFiles = new ArrayList<>();
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_pending_files.php";
+        
+        try {
+            // Create HTTP Connection
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+
+            // Check response code
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch files! HTTP error code: " + conn.getResponseCode());
+                return pendingFiles;
+            }
+
+            // Read response
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            // Parse JSON response
+            JSONArray jsonArray = new JSONArray(response.toString());
+            for (int i = 0; i < jsonArray.length(); i++) {
+            	System.out.println("Api Data:  "+ jsonArray);
+                JSONObject jsonObj = jsonArray.getJSONObject(i);
+                UploadFile uploadFile = UploadFile.fromJson(jsonObj);
+                pendingFiles.add(uploadFile);
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching pending files: " + e.getMessage());
+        }
+
+        return pendingFiles;
+    }
+ 
 }

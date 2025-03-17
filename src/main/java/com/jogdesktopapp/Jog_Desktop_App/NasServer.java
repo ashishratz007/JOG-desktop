@@ -11,7 +11,7 @@ import java.util.Date;
 public class NasServer implements SftpUploaderListener {
 	
 	private JPanel statusLabel = new JPanel();
-	
+	private JPanel livePanel =  createTablePanel();
 	@Override
 	public void onStatusChanged(SftpUploaderStatus newStatus) {
 //		 System.err.println("❌ Status Received:" + newStatus);
@@ -20,6 +20,18 @@ public class NasServer implements SftpUploaderListener {
 	    });
 	}
 	
+	@Override
+	public void onPendingChanged() {
+//		 System.err.println("❌ Status Received:" + newStatus);
+		SwingUtilities.invokeLater(() -> {
+			livePanel.removeAll();
+			livePanel = createTablePanel();
+			livePanel.revalidate();
+			livePanel.repaint();
+	    });
+	}
+	
+
 	void setStatusPanel(SftpUploaderStatus newStatus) {
 		   statusLabel.removeAll(); // Remove old content
 	        statusLabel.setLayout(new GridBagLayout()); 
@@ -54,7 +66,7 @@ public class NasServer implements SftpUploaderListener {
 
 
     public JPanel view() {
-    	App.sftpClient.addListener(this);
+    	App.sftpClient.addStatusListener(this);
     	
     	setStatusPanel(App.sftpClient.currentStatus); 
     	
@@ -97,7 +109,7 @@ public class NasServer implements SftpUploaderListener {
         JTabbedPane tabbedPane = new JTabbedPane();
         // Set font size to 10
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 10));
-        tabbedPane.addTab("Live", createTablePanel());
+        tabbedPane.addTab("Live", livePanel);
         tabbedPane.addTab("Download", createTablePanel());
         tabbedPane.addTab("Upload", createTablePanel());
 
@@ -117,7 +129,8 @@ public class NasServer implements SftpUploaderListener {
 
         // Add Components to Frame
         frame.add(titlePanel, BorderLayout.NORTH);
-        frame.add(datePanel, BorderLayout.CENTER);
+//        frame.add(datePanel, BorderLayout.CENTER);
+//        frame.add( Utills.space(50));
         frame.add(tabbedPane, BorderLayout.SOUTH);
 
         frame.setVisible(true);

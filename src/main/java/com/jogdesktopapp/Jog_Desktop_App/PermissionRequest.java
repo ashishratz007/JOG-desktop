@@ -22,22 +22,6 @@ public class PermissionRequest {
                 return;
             }
         }
-        try {
-            // Grant full control to everyone
-            Process process = Runtime.getRuntime().exec("icacls " + folder.getPath() + " /grant Everyone:F");
-            process.waitFor();
-            System.out.println("✅ Permissions gi");
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "❌ Failed");
-        }
-
-        boolean success = folder.setWritable(true, true); // Grant write permission
-        if (success) {
-            JOptionPane.showMessageDialog(null, "✅ Write permission granted!");
-        } else {
-            JOptionPane.showMessageDialog(null, "❌ Failed to grant permission.");
-        }
     }
 
 }

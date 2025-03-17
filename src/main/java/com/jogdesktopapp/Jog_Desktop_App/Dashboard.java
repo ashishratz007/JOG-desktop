@@ -112,7 +112,6 @@ class Printers {
 }
 
 class NASServerInfo implements SftpUploaderListener {
-
 	private JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
 	
 	@Override
@@ -120,6 +119,15 @@ class NASServerInfo implements SftpUploaderListener {
 //		System.err.println("❌ Status Received:" + newStatus);
 	    SwingUtilities.invokeLater(() -> {
 	    	setStatusPanel(newStatus);
+	    });
+	}
+	
+	
+	@Override
+	public void onPendingChanged() {
+//		System.err.println("❌ Status Received:" + newStatus);
+	    SwingUtilities.invokeLater(() -> {
+//	    	pending status
 	    });
 	}
 	
@@ -159,7 +167,7 @@ class NASServerInfo implements SftpUploaderListener {
 	}
 	
     public JPanel view() {
-    	App.sftpClient.addListener(this);
+    	App.sftpClient.addStatusListener(this);
     	setStatusPanel(App.sftpClient.currentStatus);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
