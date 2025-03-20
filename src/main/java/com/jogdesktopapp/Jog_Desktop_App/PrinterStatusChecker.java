@@ -108,4 +108,50 @@ public class PrinterStatusChecker {
             default: return "Unknown";
         }
     }
+
+
+
+ void getPrinterDetails(String printerIP) {
+    try {
+        String[] printerOIDs = {
+            ".1.3.6.1.2.1.25.3.2.1.3.1",  // Printer Model
+            ".1.3.6.1.2.1.25.3.5.1.2.1",  // Printer Status
+            ".1.3.6.1.2.1.43.11.1.1.6.1.1", // Toner Level
+            ".1.3.6.1.2.1.43.5.1.1.1.1"   // Printer Serial Number
+        };
+
+        TransportMapping<?> transport = new DefaultUdpTransportMapping();
+        Snmp snmp = new Snmp(transport);
+        transport.listen();
+
+        Address targetAddress = new UdpAddress(printerIP + "/161");
+        CommunityTarget target = new CommunityTarget();
+        target.setCommunity(new OctetString("public")); // Default SNMP community
+        target.setAddress(targetAddress);
+        target.setRetries(2);
+        target.setTimeout(1000);
+        target.setVersion(SnmpConstants.version2c);
+
+        PDU pdu = new PDU();
+        for (String oid : printerOIDs) {
+            pdu.add(new VariableBinding(new OID(oid)));
+        }
+        pdu.setType(PDU.GET);
+
+        ResponseEvent response = snmp.get(pdu, target);
+        if (response.getResponse() != null) {
+            System.out.println("📌 Printer Details for: " + printerIP);
+            System.out.println("🖨 Model: " + response.getResponse().get(0).toValueString());
+            System.out.println("📡 Status: " + parseStatus(response.getResponse().get(1).toValueString()));
+            System.out.println("🖋 Toner Level: " + response.getResponse().get(2).toValueString() + "%");
+            System.out.println("🔢 Serial Number: " + response.getResponse().get(3).toValueString());
+        } else {
+            System.out.println("❌ No SNMP response from: " + printerIP);
+        }
+
+        snmp.close();
+    } catch (Exception e) {
+        System.out.println("⚠️ Error getting details for: " + printerIP);
+    }
 }
+ }

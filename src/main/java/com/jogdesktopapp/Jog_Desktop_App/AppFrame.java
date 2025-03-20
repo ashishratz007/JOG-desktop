@@ -13,6 +13,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
+import com.jogdesktopapp.Jog_Desktop_App.models.NotificationService;
+
 class AppFrame extends JFrame {
     private JPanel contentPanel; // Main content panel for displaying views
     private JPanel[] tabs; // Array to hold sidebar tabs
@@ -90,19 +92,14 @@ class AppFrame extends JFrame {
                 new SwingWorker<Void, String>() {
                     @Override
                     protected Void doInBackground() {
-                        // Update UI before starting
-//                        SwingUtilities.invokeLater(() -> statusLabel.setText("Downloading..."));
-
-                        // Perform long-running task (SFTP download)
-                        App.sftpClient.downloadFile();
+                    	  NotificationService.showNotification("New Message", "You have a new notification!");
 
                         return null;
                     }
 
                     @Override
                     protected void done() {
-                        // Update UI when download completes
-                        statusLabel.setText("Online");
+                       //TODO
                     }
                 }.execute();
             }

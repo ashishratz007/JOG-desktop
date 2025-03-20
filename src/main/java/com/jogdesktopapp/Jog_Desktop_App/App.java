@@ -23,6 +23,7 @@ public class App {
 //                synologyServer.init(); // Now it won't be null
 				AppFrame window = new AppFrame();
 				window.setVisible(true);
+				EventQueue.invokeLater(() -> {
 					new SwingWorker<Void, Void>() {
 						@Override
 						protected Void doInBackground() throws Exception {
@@ -42,7 +43,7 @@ public class App {
 						}
 					}.execute();
 	
-				
+				});
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

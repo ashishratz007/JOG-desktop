@@ -56,6 +56,7 @@
     <version>5.2</version> <!-- Use the latest version -->
 </dependency>
 
+
 <dependency>
     <groupId>org.java-websocket</groupId>
     <artifactId>Java-WebSocket</artifactId>
@@ -100,6 +101,12 @@
         <groupId>org.snmp4j</groupId>
         <artifactId>snmp4j</artifactId>
         <version>3.6.5</version>
+    </dependency>
+    <!-- JavaFX for better notifications -->
+    <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-controls</artifactId>
+        <version>17</version>
     </dependency>
     
   </dependencies>
