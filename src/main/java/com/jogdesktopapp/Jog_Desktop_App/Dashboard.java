@@ -147,7 +147,7 @@ class NASServerInfo implements SftpUploaderListener {
 	     // Update background color and text based on status
 	        switch (newStatus) {
 	            case UPLOADING:
-	                statusPanel.setBackground(Color.YELLOW);
+	                statusPanel.setBackground(AppColors.Uploading);
 	                connectedLabel.setText("Uploading...");
 	                break;
 	            case DOWNLOADING:

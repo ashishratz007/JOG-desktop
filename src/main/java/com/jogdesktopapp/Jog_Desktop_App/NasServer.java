@@ -63,7 +63,7 @@ public class NasServer implements SftpUploaderListener {
 
 	        switch (newStatus) {
 	            case UPLOADING:
-	                statusLabel.setBackground(Color.YELLOW);
+	                statusLabel.setBackground(AppColors.Uploading);
 	                connectedLabel.setForeground(Color.WHITE);
 	                connectedLabel.setText("Uploading...");
 	                break;

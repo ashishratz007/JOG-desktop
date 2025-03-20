@@ -14,6 +14,7 @@ public class AppColors {
     public static final Color BlueBorder = new Color(0x6382BF); 
     public static final Color BlueText = new Color(0x0059EF);
     public static final Color BlueBg = new Color(0x0ECF2F8);
+    public static final Color Uploading = new Color(0x356383);
     
     private AppColors() {
         // Prevent instantiation

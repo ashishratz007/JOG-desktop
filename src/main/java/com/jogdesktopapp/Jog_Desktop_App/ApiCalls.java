@@ -108,7 +108,7 @@ public class ApiCalls {
             // Parse JSON response
             JSONArray jsonArray = new JSONArray(response.toString());
             for (int i = 0; i < jsonArray.length(); i++) {
-            	System.out.println("Api Data:  "+ jsonArray);
+            	
                 JSONObject jsonObj = jsonArray.getJSONObject(i);
                 UploadFile uploadFile = UploadFile.fromJson(jsonObj);
                 pendingFiles.add(uploadFile);
