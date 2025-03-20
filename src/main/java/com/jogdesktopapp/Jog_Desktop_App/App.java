@@ -30,10 +30,8 @@ public class App {
 					        PrinterStatusChecker checker = new PrinterStatusChecker();
 
 					        System.out.println("Checking locally connected printers...");
-					        checker.checkLocalPrinters(); // Call method to check local printers
-
-					        System.out.println("\nScanning network for printers...");
-					        checker.scanNetworkPrinters(); // Call method to scan network printers
+					     // Start scanning for printers
+					        checker.scanNetworkForPrinters(); // Call method to scan network printers
 							sftpClient.getPendingFiles(); // Runs in background
 							return null;
 						}
