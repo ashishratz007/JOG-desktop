@@ -23,12 +23,17 @@ public class App {
 //                synologyServer.init(); // Now it won't be null
 				AppFrame window = new AppFrame();
 				window.setVisible(true);
-
-				// Ensure Swing runs on EDT
-				SwingUtilities.invokeLater(() -> {
 					new SwingWorker<Void, Void>() {
 						@Override
 						protected Void doInBackground() throws Exception {
+							// Create an instance of PrinterStatusChecker
+					        PrinterStatusChecker checker = new PrinterStatusChecker();
+
+					        System.out.println("Checking locally connected printers...");
+					        checker.checkLocalPrinters(); // Call method to check local printers
+
+					        System.out.println("\nScanning network for printers...");
+					        checker.scanNetworkPrinters(); // Call method to scan network printers
 							sftpClient.getPendingFiles(); // Runs in background
 							return null;
 						}
@@ -38,8 +43,8 @@ public class App {
 							System.out.println("File retrieval completed.");
 						}
 					}.execute();
-				});
-				PrinterStatusChecker.checkPrinters();
+	
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
