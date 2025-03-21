@@ -1,20 +1,12 @@
 package com.jogdesktopapp.Jog_Desktop_App.models;
 
-import org.apache.batik.transcoder.Transcoder;
-import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.image.PNGTranscoder;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-
-import javax.swing.*;
-import java.awt.*;
 import javax.swing.*;
 import java.io.*;
 
 public class EpsToPngConverter {
 
-    private static final String GS_PATH = "/opt/homebrew/bin/gs"; // Path to Ghostscript (Mac)
-    private static final String INKSCAPE_PATH = "/opt/homebrew/bin/inkscape"; // Inkscape for PDF to SVG
+    private static final String GS_PATH = "C:\\Program Files\\gs\\gs10.05.0\\bin\\gswin64c.exe"; // Ghostscript path (Windows)
+    private static final String INKSCAPE_PATH = "C:\\Program Files\\Inkscape\\bin\\inkscape.exe"; // Inkscape path (Windows)
 
     /**
      * Open file picker to select an EPS file.
@@ -37,15 +29,18 @@ public class EpsToPngConverter {
     /**
      * Convert EPS to PNG using Ghostscript.
      */
-    public static boolean convertEpsToPng(File epsFile, File pngFile) {
+    public static boolean convertEpsToPng(File epsFile) {
         try {
-        	ProcessBuilder pb = new ProcessBuilder(GS_PATH,
-        	        "-dNOPAUSE", "-dBATCH",
-        	        "-sDEVICE=png16m", // Use png16m instead of pngalpha
-        	        "-r600", // Increase resolution for better output
-        	        "-dEPSCrop", // Ensure content is correctly cropped
-        	        "-sOutputFile=" + pngFile.getAbsolutePath(),
-        	        epsFile.getAbsolutePath());
+            String fileNameWithoutExt = epsFile.getName().replaceFirst("[.][^.]+$", "");
+            File pngFile = new File(epsFile.getParent(), fileNameWithoutExt + ".png");
+
+            ProcessBuilder pb = new ProcessBuilder(GS_PATH,
+                    "-dNOPAUSE", "-dBATCH",
+                    "-sDEVICE=png16m",
+                    "-r600", // High resolution
+                    "-dEPSCrop",
+                    "-sOutputFile=" + pngFile.getAbsolutePath(),
+                    epsFile.getAbsolutePath());
 
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -62,9 +57,11 @@ public class EpsToPngConverter {
     /**
      * Convert EPS to SVG by first converting to PDF (via Ghostscript), then to SVG (via Inkscape).
      */
-    public static boolean convertEpsToSvg(File epsFile, File svgFile) {
+    public static boolean convertEpsToSvg(File epsFile) {
         try {
-            File pdfFile = new File(epsFile.getParent(), "temp.pdf");
+            String fileNameWithoutExt = epsFile.getName().replaceFirst("[.][^.]+$", "");
+            File pdfFile = new File(epsFile.getParent(), fileNameWithoutExt + ".pdf");
+            File svgFile = new File(epsFile.getParent(), fileNameWithoutExt + ".svg");
 
             // Step 1: Convert EPS to PDF
             ProcessBuilder pb1 = new ProcessBuilder(GS_PATH,
@@ -87,6 +84,7 @@ public class EpsToPngConverter {
             printProcessOutput(p2);
             p2.waitFor();
 
+            pdfFile.delete(); // Clean up temporary PDF file
             return svgFile.exists() && svgFile.length() > 0;
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -108,28 +106,24 @@ public class EpsToPngConverter {
     /**
      * Test the EPS to PNG/SVG conversion using file picker.
      */
-    public static void main() {
+    public static void main(String[] args) {
         File epsFile = pickEpsFile();
         if (epsFile == null) {
             System.out.println("No file selected.");
             return;
         }
 
-        File pngFile = new File(epsFile.getParent(), "output.png");
-        File svgFile = new File(epsFile.getParent(), "output.svg");
-
-        // Convert EPS to PNG
-        if (convertEpsToPng(epsFile, pngFile)) {
-            System.out.println("EPS to PNG conversion successful: " + pngFile.getAbsolutePath());
+        if (convertEpsToPng(epsFile)) {
+            System.out.println("EPS to PNG conversion successful.");
         } else {
             System.out.println("EPS to PNG conversion failed.");
         }
 
-        // Convert EPS to SVG
-        if (convertEpsToSvg(epsFile, svgFile)) {
-            System.out.println("EPS to SVG conversion successful: " + svgFile.getAbsolutePath());
+        if (convertEpsToSvg(epsFile)) {
+            System.out.println("EPS to SVG conversion successful.");
         } else {
             System.out.println("EPS to SVG conversion failed.");
         }
     }
 }
+s
