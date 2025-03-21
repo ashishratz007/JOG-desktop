@@ -14,12 +14,11 @@ public class App {
 	static SocketModel socketModel = SocketModel.getInstance();
 //    static SynologyServerModel synologyServer = SynologyServerModel.getInstance(); // Initialize the singleton
 	static SftpUploader sftpClient = SftpUploader.getInstance(); // actions client for upload download and many more
-																	// functions
 
 	public static void main(String[] args) {
 		PermissionRequest.main(args);
 		EventQueue.invokeLater(() -> {
-			try {
+			try {  
 //                synologyServer.init(); // Now it won't be null
 				AppFrame window = new AppFrame();
 				window.setVisible(true);
@@ -27,16 +26,9 @@ public class App {
 					new SwingWorker<Void, Void>() {
 						@Override
 						protected Void doInBackground() throws Exception {
-							// Create an instance of PrinterStatusChecker
-					        PrinterStatusChecker checker = new PrinterStatusChecker();
-
-					        System.out.println("Checking locally connected printers...");
-					     // Start scanning for printers
-					        checker.scanNetworkForPrinters(); // Call method to scan network printers
 							sftpClient.getPendingFiles(); // Runs in background
 							return null;
 						}
-
 						@Override
 						protected void done() {
 							System.out.println("File retrieval completed.");

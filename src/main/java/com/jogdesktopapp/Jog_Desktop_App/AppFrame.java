@@ -95,10 +95,8 @@ class AppFrame extends JFrame {
                     protected Void doInBackground() {
                     	EpsToPngConverter convetor = new EpsToPngConverter();
                     	convetor.main();
-
                         return null;
                     }
-
                     @Override
                     protected void done() {
                        //TODO

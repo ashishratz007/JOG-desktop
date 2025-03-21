@@ -7,7 +7,6 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
-import java.io.*;
 
 public class EpsToPngConverter {
 
@@ -34,6 +33,7 @@ public class EpsToPngConverter {
 
     /**
      * Convert EPS to PNG using Ghostscript.
+     * 
      */
     public static boolean convertEpsToPng(File epsFile) {
         try {
