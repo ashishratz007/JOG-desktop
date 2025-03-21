@@ -2,6 +2,12 @@ package com.jogdesktopapp.Jog_Desktop_App.models;
 
 import javax.swing.*;
 import java.io.*;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
+import java.io.*;
 
 public class EpsToPngConverter {
 
@@ -46,7 +52,7 @@ public class EpsToPngConverter {
             Process process = pb.start();
             printProcessOutput(process);
             process.waitFor();
-
+            compressPng(pngFile);
             return pngFile.exists() && pngFile.length() > 0;
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -103,6 +109,77 @@ public class EpsToPngConverter {
         }
     }
 
+    
+    /**
+     * Compress a PNG file to be less than 100 KB.
+     * 
+     * @param inputFile The PNG file to be compressed.
+     * @return True if compression is successful, false otherwise.
+     */
+    public static boolean compressPng(File inputFile) {
+        try {
+            BufferedImage image = ImageIO.read(inputFile);
+            if (image == null) {
+                System.err.println("Error: Could not read image file.");
+                return false;
+            }
+
+            float compressionQuality = 1.0f; // Start with high quality
+            long fileSize;
+            do {
+                compressionQuality -= 0.05f; // Reduce quality step by step
+                if (compressionQuality < 0.1f) {
+                    System.err.println("Cannot compress further while maintaining quality.");
+                    return false;
+                }
+
+                // Create a temporary file for compression
+                File tempFile = new File(inputFile.getParent(), "temp_compressed.png");
+
+                // Compress and write to temp file
+                fileSize = writeCompressedImage(image, tempFile, compressionQuality);
+                System.out.println("Compression quality: " + compressionQuality + " | File size: " + fileSize + " bytes");
+
+                // Replace the original file if the compression succeeded
+                if (fileSize < 100 * 1024) {
+                    if (inputFile.delete() && tempFile.renameTo(inputFile)) {
+                        return true;
+                    } else {
+                        System.err.println("Failed to replace the original file.");
+                        return false;
+                    }
+                }
+
+            } while (fileSize > 100 * 1024); // Ensure file is less than 100 KB
+
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Write the compressed image file.
+     */
+    private static long writeCompressedImage(BufferedImage image, File outputFile, float quality) throws IOException {
+        ImageWriter writer = ImageIO.getImageWritersByFormatName("png").next();
+        ImageWriteParam param = writer.getDefaultWriteParam();
+
+        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        param.setCompressionQuality(quality); // Apply compression quality
+
+        try (OutputStream os = new FileOutputStream(outputFile);
+             ImageOutputStream ios = ImageIO.createImageOutputStream(os)) {
+            writer.setOutput(ios);
+            writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+        }
+
+        writer.dispose();
+        return outputFile.length(); // Return file size
+    }
+    
+    
     /**
      * Test the EPS to PNG/SVG conversion using file picker.
      */
