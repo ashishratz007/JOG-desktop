@@ -61,44 +61,6 @@ public class EpsToPngConverter {
     }
 
     /**
-     * Convert EPS to SVG by first converting to PDF (via Ghostscript), then to SVG (via Inkscape).
-     */
-    public static boolean convertEpsToSvg(File epsFile) {
-        try {
-            String fileNameWithoutExt = epsFile.getName().replaceFirst("[.][^.]+$", "");
-            File pdfFile = new File(epsFile.getParent(), fileNameWithoutExt + ".pdf");
-            File svgFile = new File(epsFile.getParent(), fileNameWithoutExt + ".svg");
-
-            // Step 1: Convert EPS to PDF
-            ProcessBuilder pb1 = new ProcessBuilder(GS_PATH,
-                    "-dNOPAUSE", "-dBATCH",
-                    "-sDEVICE=pdfwrite",
-                    "-sOutputFile=" + pdfFile.getAbsolutePath(),
-                    epsFile.getAbsolutePath());
-            pb1.redirectErrorStream(true);
-            Process p1 = pb1.start();
-            printProcessOutput(p1);
-            p1.waitFor();
-
-            // Step 2: Convert PDF to SVG using Inkscape
-            ProcessBuilder pb2 = new ProcessBuilder(INKSCAPE_PATH,
-                    pdfFile.getAbsolutePath(),
-                    "--export-type=svg",
-                    "--export-filename=" + svgFile.getAbsolutePath());
-            pb2.redirectErrorStream(true);
-            Process p2 = pb2.start();
-            printProcessOutput(p2);
-            p2.waitFor();
-
-            pdfFile.delete(); // Clean up temporary PDF file
-            return svgFile.exists() && svgFile.length() > 0;
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
      * Print output from a process (for debugging).
      */
     private static void printProcessOutput(Process process) throws IOException {
@@ -194,12 +156,6 @@ public class EpsToPngConverter {
             System.out.println("EPS to PNG conversion successful.");
         } else {
             System.out.println("EPS to PNG conversion failed.");
-        }
-
-        if (convertEpsToSvg(epsFile)) {
-            System.out.println("EPS to SVG conversion successful.");
-        } else {
-            System.out.println("EPS to SVG conversion failed.");
         }
     }
 }
