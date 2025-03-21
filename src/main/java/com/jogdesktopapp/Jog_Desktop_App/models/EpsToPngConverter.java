@@ -6,6 +6,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class EpsToPngConverter {
@@ -80,29 +82,33 @@ public class EpsToPngConverter {
      */
     public static boolean compressPng(File inputFile) {
         try {
-            BufferedImage image = ImageIO.read(inputFile);
-            if (image == null) {
+            BufferedImage originalImage = ImageIO.read(inputFile);
+            if (originalImage == null) {
                 System.err.println("Error: Could not read image file.");
                 return false;
             }
 
-            float compressionQuality = 1.0f; // Start with high quality
+            // Convert image to a compatible format (Avoids "Invalid scanline stride" issue)
+            BufferedImage convertedImage = new BufferedImage(
+                    originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = convertedImage.createGraphics();
+            g.drawImage(originalImage, 0, 0, null);
+            g.dispose();
+
+            float compressionQuality = 1.0f;
             long fileSize;
+            File tempFile = new File(inputFile.getParent(), "temp_compressed.png");
+
             do {
-                compressionQuality -= 0.05f; // Reduce quality step by step
+                compressionQuality -= 0.05f;
                 if (compressionQuality < 0.1f) {
                     System.err.println("Cannot compress further while maintaining quality.");
                     return false;
                 }
 
-                // Create a temporary file for compression
-                File tempFile = new File(inputFile.getParent(), "temp_compressed.png");
-
-                // Compress and write to temp file
-                fileSize = writeCompressedImage(image, tempFile, compressionQuality);
+                fileSize = writeCompressedImage(convertedImage, tempFile, compressionQuality);
                 System.out.println("Compression quality: " + compressionQuality + " | File size: " + fileSize + " bytes");
 
-                // Replace the original file if the compression succeeded
                 if (fileSize < 100 * 1024) {
                     if (inputFile.delete() && tempFile.renameTo(inputFile)) {
                         return true;
@@ -112,7 +118,7 @@ public class EpsToPngConverter {
                     }
                 }
 
-            } while (fileSize > 100 * 1024); // Ensure file is less than 100 KB
+            } while (fileSize > 100 * 1024);
 
             return false;
         } catch (IOException e) {
@@ -121,15 +127,12 @@ public class EpsToPngConverter {
         }
     }
 
-    /**
-     * Write the compressed image file.
-     */
     private static long writeCompressedImage(BufferedImage image, File outputFile, float quality) throws IOException {
         ImageWriter writer = ImageIO.getImageWritersByFormatName("png").next();
         ImageWriteParam param = writer.getDefaultWriteParam();
 
         param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        param.setCompressionQuality(quality); // Apply compression quality
+        param.setCompressionQuality(quality);
 
         try (OutputStream os = new FileOutputStream(outputFile);
              ImageOutputStream ios = ImageIO.createImageOutputStream(os)) {
@@ -138,10 +141,8 @@ public class EpsToPngConverter {
         }
 
         writer.dispose();
-        return outputFile.length(); // Return file size
+        return outputFile.length();
     }
-    
-    
     /**
      * Test the EPS to PNG/SVG conversion using file picker.
      */
