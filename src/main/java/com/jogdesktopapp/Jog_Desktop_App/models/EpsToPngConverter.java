@@ -106,7 +106,7 @@ public class EpsToPngConverter {
     /**
      * Test the EPS to PNG/SVG conversion using file picker.
      */
-    public static void main(String[] args) {
+    public static void main() {
         File epsFile = pickEpsFile();
         if (epsFile == null) {
             System.out.println("No file selected.");
