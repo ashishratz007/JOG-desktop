@@ -13,6 +13,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
+import com.jogdesktopapp.Jog_Desktop_App.models.EpsToPngConverter;
 import com.jogdesktopapp.Jog_Desktop_App.models.NotificationService;
 
 class AppFrame extends JFrame {
@@ -92,7 +93,8 @@ class AppFrame extends JFrame {
                 new SwingWorker<Void, String>() {
                     @Override
                     protected Void doInBackground() {
-                    	  NotificationService.showNotification("New Message", "You have a new notification!");
+                    	EpsToPngConverter convetor = new EpsToPngConverter();
+                    	convetor.main();
 
                         return null;
                     }
