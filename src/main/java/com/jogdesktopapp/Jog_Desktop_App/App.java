@@ -26,7 +26,7 @@ public class App {
 					new SwingWorker<Void, Void>() {
 						@Override
 						protected Void doInBackground() throws Exception {
-//							sftpClient.getPendingFiles(); // Runs in background
+							sftpClient.getPendingFiles(); // Runs in background
 							return null;
 						}
 						@Override
