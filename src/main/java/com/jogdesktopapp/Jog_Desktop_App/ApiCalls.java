@@ -48,7 +48,7 @@ public class ApiCalls {
     // delete file if no exits
     public static boolean deleteFile(String id) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/delete_files.php";
-        String jsonInputString = "{\"order_id\": \"" + id + "\"}";
+        String jsonInputString = "{\"id\": \"" + id + "\"}";
         
         try {
             URL url = new URL(apiUrl);
