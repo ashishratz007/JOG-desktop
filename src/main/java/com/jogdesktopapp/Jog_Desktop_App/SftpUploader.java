@@ -4,8 +4,11 @@ import com.jcraft.jsch.*;
 
 import javax.swing.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import org.json.JSONObject;
 
@@ -172,49 +175,76 @@ public class SftpUploader {
      * Also [uploadFolderName] is to upload the file to the folder to make it as a separate
      * Also get year to store the data as year wise upload will happen as year wise
      */
-    private boolean uploadFile(String localPath, String uploadFolderName) {
-        System.out.println("📤 Locating file");
-        File selectedFile = new File(localPath);
-        String localFilePath = selectedFile.getAbsolutePath();
-        String yearStr = String.valueOf(Year.now().getValue());
-        String remoteYearPath = REMOTE_UPLOAD_DIR + "/" + yearStr;
-        String remoteUploadPath = remoteYearPath + "/" + uploadFolderName;
-        String remoteFilePath = remoteUploadPath + "/" + selectedFile.getName();
+private boolean uploadFile(String localPath, String uploadFolderName) {
+    System.out.println("📤 Locating file");
+    File selectedFile = new File(localPath);
+    String fileName = selectedFile.getName(); // Extract filename with extension
 
-        Session session = null;
-        ChannelSftp channel = null;
-        System.out.println("📤 Uploading action on file");
-        notifyStatusChange(SftpUploaderStatus.UPLOADING);
+    // Extract the file name without extension
+    String fileBaseName = fileName.contains(".") ? fileName.substring(0, fileName.lastIndexOf(".")) : fileName;
 
+    // Construct the imagePath by appending .png to the file base name
+    String imagePath = localPath.replace(fileName, fileBaseName + ".png");
+
+    String yearStr = String.valueOf(Year.now().getValue());
+    String remoteYearPath = REMOTE_UPLOAD_DIR + "/" + yearStr;
+    String remoteUploadPath = remoteYearPath + "/" + uploadFolderName;
+    String remoteFilePath = remoteUploadPath + "/" + fileName;
+
+    Session session = null;
+    ChannelSftp channel = null;
+    System.out.println("📤 Uploading action on file");
+    notifyStatusChange(SftpUploaderStatus.UPLOADING);
+
+    try {
+        JSch jsch = new JSch();
+        session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
+        session.setPassword(PASSWORD);
+        session.setConfig("StrictHostKeyChecking", "no");
+        session.connect(15_000);
+
+        channel = (ChannelSftp) session.openChannel("sftp");
+        channel.connect(10_000);
+
+        // Ensure the year folder exists
+        createRemoteFolderIfNotExists(channel, remoteYearPath);
+        // Ensure the upload folder exists inside the year folder
+        createRemoteFolderIfNotExists(channel, remoteUploadPath);
+
+        // Upload the file
+        channel.put(localPath, remoteFilePath, ChannelSftp.OVERWRITE);
+        System.out.println("✅ File uploaded successfully: " + remoteFilePath);
+
+        System.out.println("✅ Got Local Image Path successfully: " + imagePath);
+        System.out.println("✅ Got Local File Path successfully: " + localPath);
+        // Convert imagePath to Base64
+        String base64Image = encodeFileToBase64(imagePath);
+
+        // Call API with image data
+        ApiCalls.confirmUpload(currentFile.getId(), remoteFilePath, base64Image);
+        return true;
+
+    } catch (JSchException | SftpException e) {
+        System.err.println("❌ SFTP Error: " + e.getMessage());
+    } finally {
+        notifyStatusChange(SftpUploaderStatus.IDLE);
+        if (channel != null) channel.disconnect();
+        if (session != null) session.disconnect();
+    }
+    return false;
+}
+
+    // Helper method to convert image to base64
+    private String encodeFileToBase64(String filePath) {
         try {
-            JSch jsch = new JSch();
-            session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
-            session.setPassword(PASSWORD);
-            session.setConfig("StrictHostKeyChecking", "no");
-            session.connect(15_000);
-
-            channel = (ChannelSftp) session.openChannel("sftp");
-            channel.connect(10_000);
-
-            // Ensure the year folder exists
-            createRemoteFolderIfNotExists(channel, remoteYearPath);
-            // Ensure the upload folder exists inside the year folder
-            createRemoteFolderIfNotExists(channel, remoteUploadPath);
-
-            // Upload the file
-            channel.put(localFilePath, remoteFilePath, ChannelSftp.OVERWRITE);
-            System.out.println("✅ File uploaded successfully: " + remoteFilePath);
-            ApiCalls.confirmUpload(currentFile.getId(), remoteFilePath);
-            return true;
-
-        } catch (JSchException | SftpException e) {
-            System.err.println("❌ SFTP Error: " + e.getMessage());
-        } finally {
-            notifyStatusChange(SftpUploaderStatus.IDLE);
-            if (channel != null) channel.disconnect();
-            if (session != null) session.disconnect();
+            byte[] fileContent = Files.readAllBytes(Paths.get(filePath));
+            String base64Str =  Base64.getEncoder().encodeToString(fileContent);
+            System.err.println("✅ Base64 Generated For File");
+            return base64Str;
+        } catch (IOException e) {
+            System.err.println("❌ Error encoding file to Base64: " + e.getMessage());
+            return "";
         }
-        return false;
     }
     /**
      create the folder if not exits in the synology server 

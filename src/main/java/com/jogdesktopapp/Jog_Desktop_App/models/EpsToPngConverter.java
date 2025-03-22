@@ -1,19 +1,24 @@
 package com.jogdesktopapp.Jog_Desktop_App.models;
 
 import javax.swing.*;
-import java.io.*;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
 
+
+import ar.com.hjg.pngj.PngReader;
+import ar.com.hjg.pngj.PngWriter;
+
+import java.io.*;
+import java.util.Iterator;
+import ar.com.hjg.pngj.*;
+
+import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 
 public class EpsToPngConverter {
 
-    private static final String GS_PATH = "C:\\Program Files\\gs\\gs10.05.0\\bin\\gswin64c.exe"; // Ghostscript path (Windows)
-    private static final String INKSCAPE_PATH = "C:\\Program Files\\Inkscape\\bin\\inkscape.exe"; // Inkscape path (Windows)
+//    private static final String GS_PATH = "C:\\Program Files\\gs\\gs10.05.0\\bin\\gswin64c.exe"; // Ghostscript path (Windows)
+//    private static final String INKSCAPE_PATH = "C:\\Program Files\\Inkscape\\bin\\inkscape.exe"; // Inkscape path (Windows)
+	 private static final String GS_PATH = "/opt/homebrew/bin/gs"; // Path to Ghostscript (Mac)
+	    private static final String INKSCAPE_PATH = "/opt/homebrew/bin/inkscape"; // Inkscape for PDF to SVG
 
     /**
      * Open file picker to select an EPS file.
@@ -54,7 +59,7 @@ public class EpsToPngConverter {
             Process process = pb.start();
             printProcessOutput(process);
             process.waitFor();
-            compressPng(pngFile);
+            compressPng(pngFile); 
             return pngFile.exists() && pngFile.length() > 0;
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -80,71 +85,63 @@ public class EpsToPngConverter {
      * @param inputFile The PNG file to be compressed.
      * @return True if compression is successful, false otherwise.
      */
-    public static boolean compressPng(File inputFile) {
-        try {
-            BufferedImage originalImage = ImageIO.read(inputFile);
-            if (originalImage == null) {
-                System.err.println("Error: Could not read image file.");
-                return false;
-            }
+    public static void compressPng(File inputFile) throws IOException {
+        // Define output file name
+        String outputFilePath = inputFile.getParent() + File.separator +
+                inputFile.getName().replace(".png", "_compressed.png");
+        File compressedFile = new File(outputFilePath);
 
-            // Convert image to a compatible format (Avoids "Invalid scanline stride" issue)
-            BufferedImage convertedImage = new BufferedImage(
-                    originalImage.getWidth(), originalImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = convertedImage.createGraphics();
-            g.drawImage(originalImage, 0, 0, null);
-            g.dispose();
+        // Read the PNG image
+        PngReader pngr = new PngReader(inputFile);
+        PngWriter pngw = new PngWriter(compressedFile, pngr.imgInfo, true);
 
-            float compressionQuality = 1.0f;
-            long fileSize;
-            File tempFile = new File(inputFile.getParent(), "temp_compressed.png");
+        // Apply max compression
+        pngw.setCompLevel(9);
+        pngw.setFilterType(FilterType.FILTER_PAETH); // Best filter for small size
+        pngw.setFilterPreserve(false); // Allow optimization
+//        pngw.setFilterPreserve(false); // Remove metadata
 
-            do {
-                compressionQuality -= 0.05f;
-                if (compressionQuality < 0.1f) {
-                    System.err.println("Cannot compress further while maintaining quality.");
-                    return false;
-                }
+        // Process rows
+        for (int row = 0; row < pngr.imgInfo.rows; row++) {
+            pngw.writeRow(pngr.readRow());
+        }
 
-                fileSize = writeCompressedImage(convertedImage, tempFile, compressionQuality);
-                System.out.println("Compression quality: " + compressionQuality + " | File size: " + fileSize + " bytes");
+        // Close the streams
+        pngr.end();
+        pngw.end();
 
-                if (fileSize < 100 * 1024) {
-                    if (inputFile.delete() && tempFile.renameTo(inputFile)) {
-                        return true;
-                    } else {
-                        System.err.println("Failed to replace the original file.");
-                        return false;
-                    }
-                }
+        // Check and retry compression if needed
+        long fileSize = compressedFile.length();
+        System.out.println("Compressed size: " + fileSize / 1024 + " KB");
 
-            } while (fileSize > 100 * 1024);
-
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+        if (fileSize > 100 * 1024) {
+            System.out.println("Recompressing to ensure < 100KB...");
+            reCompressPng(compressedFile);
         }
     }
 
-    private static long writeCompressedImage(BufferedImage image, File outputFile, float quality) throws IOException {
-        ImageWriter writer = ImageIO.getImageWritersByFormatName("png").next();
-        ImageWriteParam param = writer.getDefaultWriteParam();
+    private static void reCompressPng(File file) throws IOException {
+        PngReader pngr = new PngReader(file);
+        File smallerFile = new File(file.getParent(), file.getName().replace(".png", "_below100kb.png"));
+        PngWriter pngw = new PngWriter(smallerFile, pngr.imgInfo, true);
 
-        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        param.setCompressionQuality(quality);
+        pngw.setCompLevel(9);
+        pngw.setFilterType(FilterType.FILTER_SUB); // Alternative filter for size reduction
+        pngw.setFilterPreserve(false); // Strip metadata
 
-        try (OutputStream os = new FileOutputStream(outputFile);
-             ImageOutputStream ios = ImageIO.createImageOutputStream(os)) {
-            writer.setOutput(ios);
-            writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+        for (int row = 0; row < pngr.imgInfo.rows; row++) {
+            pngw.writeRow(pngr.readRow());
         }
 
-        writer.dispose();
-        return outputFile.length();
+        pngr.end();
+        pngw.end();
+
+        System.out.println("Final compressed size: " + smallerFile.length() / 1024 + " KB");
     }
-    /**
-     * Test the EPS to PNG/SVG conversion using file picker.
+ 
+
+     
+    /* Test the EPS to PNG/SVG conversion using file picker.
      */
     public static void main() {
         File epsFile = pickEpsFile();

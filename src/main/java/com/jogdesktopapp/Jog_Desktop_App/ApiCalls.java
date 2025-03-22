@@ -13,9 +13,9 @@ import org.json.JSONObject;
 
 public class ApiCalls {
     
-    public static String confirmUpload(String id, String path) {
+    public static String confirmUpload(String id, String path,  String base64Image) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_synology.php";
-        String jsonInputString = "{\"order_id\": \"" + id + "\", \"synology_path\": \"" + path + "\"}";
+        String jsonInputString = "{\"order_id\": \"" + id + "\", \"synology_path\": \"" + path + "\", \"image\": \"" + base64Image + "\"}";
         
         try {
             URL url = new URL(apiUrl);
