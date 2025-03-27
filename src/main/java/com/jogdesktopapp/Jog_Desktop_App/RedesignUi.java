@@ -38,10 +38,11 @@ public class RedesignUi {
     private static final int ITEMS_PER_PAGE = 10;
     private int currentPendingPage = 1;
     private int currentCompletePage = 1;
+    int maxWidth = 100;
     
     public RedesignUi() {
-        pendingPanel = createPendingTablePanel(new Object[0][4]);
-        completePanel = createCompleteTablePanel(new Object[0][4]);
+        pendingPanel = createPendingTablePanel(new Object[0][5]); // Changed from 4 to 5
+        completePanel = createCompleteTablePanel(new Object[0][5]); // Changed from 4 to 5
         initializeUI();
         refreshData();
     }
@@ -204,7 +205,7 @@ public class RedesignUi {
     
     private void displayPendingPage(int pageNumber) {
         List<RedesignItem> pageItems = pending.data;
-        Object[][] data = new Object[pageItems.size()][4];
+        Object[][] data = new Object[pageItems.size()][5]; // Changed from 4 to 5
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
@@ -212,6 +213,7 @@ public class RedesignUi {
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
+            data[i][4] = file.note != null ? file.note : ""; // Added note column
         }
         
         refreshPendingTable(data);
@@ -219,7 +221,7 @@ public class RedesignUi {
     
     private void displayCompletePage(int pageNumber) {
         List<RedesignItem> pageItems = complete.data;
-        Object[][] data = new Object[pageItems.size()][4];
+        Object[][] data = new Object[pageItems.size()][5]; // Changed from 4 to 5
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
@@ -227,6 +229,7 @@ public class RedesignUi {
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
+            data[i][4] = file.note != null ? file.note : ""; // Added note column
         }
         
         refreshCompleteTable(data);
@@ -268,12 +271,12 @@ public class RedesignUi {
     }
     
     private JScrollPane createPendingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date"};
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 4; // Only Note column is editable
             }
         };
         
@@ -291,20 +294,31 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
+        // Set fixed column width for Note column
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        
+        configureNoteColumn(table);
+        
         return new JScrollPane(table);
     }
     
     private JScrollPane createCompleteTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date"};
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
         
-        JTable table = new JTable(new DefaultTableModel(data, columnNames)) {
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 4; // Only Note column is editable
+            }
+        };
+        
+        JTable table = new JTable(model) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
-                if (row % 2 == 0) {
-                    c.setBackground(Color.WHITE);
-                } else {
-                    c.setBackground(new Color(0xC4D7E9));
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xC4D7E9));
                 }
                 return c;
             }
@@ -312,7 +326,32 @@ public class RedesignUi {
         
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
+        
+        // Set fixed column width for Note column
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        
+        configureNoteColumn(table);
+        
         return new JScrollPane(table);
+    }
+    
+    private void configureNoteColumn(JTable table) {
+        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String note = e.getActionCommand();
+                if (note != null && !note.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        note, 
+                        "Note", 
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }, "icons/note.png"));
     }
     
     private JButton createPageButton(int pageNumber) {
@@ -418,16 +457,30 @@ public class RedesignUi {
         pagesPanel.repaint();
     }
     
+    private TableCellRenderer getButtonRenderer(String iconPath) {
+        return (table, value, isSelected, hasFocus, row, column) -> createIconButton(iconPath);
+    }
+    
+    private JButton createIconButton(String iconPath) {
+        JButton button = new JButton(new ImageIcon(iconPath));
+        button.setOpaque(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+    
     private JPanel createPendingTablePanel(Object[][] data) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date"};
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 4; // Only Note column is editable
             }
         };
         
@@ -445,6 +498,12 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
+        // Set fixed column width for Note column
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        
+        configureNoteColumn(table);
+        
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
     }
@@ -453,16 +512,21 @@ public class RedesignUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date"};
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
         
-        JTable table = new JTable(new DefaultTableModel(data, columnNames)) {
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 4; // Only Note column is editable
+            }
+        };
+        
+        JTable table = new JTable(model) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
-                if (row % 2 == 0) {
-                    c.setBackground(Color.WHITE);
-                } else {
-                    c.setBackground(new Color(0xC4D7E9));
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xC4D7E9));
                 }
                 return c;
             }
@@ -470,6 +534,12 @@ public class RedesignUi {
         
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
+        
+        // Set fixed column width for Note column
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        
+        configureNoteColumn(table);
         
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;

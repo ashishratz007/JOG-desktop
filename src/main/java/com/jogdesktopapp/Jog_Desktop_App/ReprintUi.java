@@ -41,10 +41,11 @@ public class ReprintUi {
     private static final int ITEMS_PER_PAGE = 10;
     private int currentPendingPage = 1;
     private int currentCompletePage = 1;
+    int maxWidth = 100;
     
     public ReprintUi() {
-        pendingPanel = createPendingTablePanel(new Object[0][7]);
-        completePanel = createCompleteTablePanel(new Object[0][5]);
+        pendingPanel = createPendingTablePanel(new Object[0][8]);
+        completePanel = createCompleteTablePanel(new Object[0][6]); // Changed from 5 to 6
         initializeUI();
         refreshData();
     }
@@ -207,7 +208,7 @@ public class ReprintUi {
     
     private void displayPendingPage(int pageNumber) {
         List<ReprintItem> pageItems = pending.data;
-        Object[][] data = new Object[pageItems.size()][7];
+        Object[][] data = new Object[pageItems.size()][8];
         
         for (int i = 0; i < pageItems.size(); i++) {
             ReprintItem file = pageItems.get(i);
@@ -218,6 +219,7 @@ public class ReprintUi {
             data[i][4] = file.printerName;
             data[i][5] = file.synologyPath;
             data[i][6] = file.reprintId;
+            data[i][7] = file.note != null ? file.note : "";
         }
         
         refreshPendingTable(data);
@@ -225,7 +227,7 @@ public class ReprintUi {
     
     private void displayCompletePage(int pageNumber) {
         List<ReprintItem> pageItems = complete.data;
-        Object[][] data = new Object[pageItems.size()][5];
+        Object[][] data = new Object[pageItems.size()][6]; // Changed from 5 to 6
         
         for (int i = 0; i < pageItems.size(); i++) {
             ReprintItem file = pageItems.get(i);
@@ -234,6 +236,7 @@ public class ReprintUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
             data[i][4] = file.printerName;
+            data[i][5] = file.note != null ? file.note : ""; // Added note column
         }
         
         refreshCompleteTable(data);
@@ -267,12 +270,53 @@ public class ReprintUi {
     }
     
     private JScrollPane createPendingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Download", "Set to Complete"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5 || column == 6;
+                return column == 5 || column == 6 || column == 7;
+            }
+        };
+        
+        JTable table = new JTable(model) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xC4D7E9));
+                }
+                return c;
+            }
+        };
+        
+        table.setRowHeight(30);
+        table.setGridColor(Color.DARK_GRAY);
+       
+        // Set fixed column widths
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Designer
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Complete
+        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(7).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(7).setMaxWidth(maxWidth);
+        
+        configureDownloadColumn(table);
+        configureCompleteColumn(table);
+        configureNoteColumn(table);
+        
+        return new JScrollPane(table);
+    }
+    
+    private JScrollPane createCompleteTable(Object[][] data) {
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Note"}; // Added Note column
+        
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 5; // Only Note column is editable
             }
         };
         
@@ -290,30 +334,12 @@ public class ReprintUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        configureDownloadColumn(table);
-        configureCompleteColumn(table);
+        // Set fixed column widths
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
         
-        return new JScrollPane(table);
-    }
-    
-    private JScrollPane createCompleteTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer"};
+        configureNoteColumnForComplete(table);
         
-        JTable table = new JTable(new DefaultTableModel(data, columnNames)) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
-                if (row % 2 == 0) {
-                    c.setBackground(Color.WHITE);
-                } else {
-                    c.setBackground(new Color(0xC4D7E9));
-                }
-                return c;
-            }
-        };
-        
-        table.setRowHeight(30);
-        table.setGridColor(Color.DARK_GRAY);
         return new JScrollPane(table);
     }
     
@@ -373,6 +399,42 @@ public class ReprintUi {
         }, "icons/complete.png"));
     }
     
+    private void configureNoteColumn(JTable table) {
+        table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(7).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String note = e.getActionCommand();
+                if (note != null && !note.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        note, 
+                        "Note", 
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }, "icons/note.png"));
+    }
+    
+    private void configureNoteColumnForComplete(JTable table) {
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String note = e.getActionCommand();
+                if (note != null && !note.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        note, 
+                        "Note", 
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }, "icons/note.png"));
+    }
+
     private JButton createPageButton(int pageNumber) {
         JButton button = new JButton(String.valueOf(pageNumber));
         button.setPreferredSize(new Dimension(25, 25));
@@ -494,12 +556,56 @@ public class ReprintUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Download", "Set to Complete"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5 || column == 6;
+                return column == 5 || column == 6 || column == 7;
+            }
+        };
+        
+        JTable table = new JTable(model) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xC4D7E9));
+                }
+                return c;
+            }
+        };
+        
+        table.setRowHeight(30);
+        table.setGridColor(Color.DARK_GRAY);
+        // Set fixed column widths
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Designer
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Complete
+        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(7).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(7).setMaxWidth(maxWidth);
+        
+        configureDownloadColumn(table);
+        configureCompleteColumn(table);
+        configureNoteColumn(table);
+        
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createCompleteTablePanel(Object[][] data) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(0xC4D7E9));
+        
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Note"}; // Added Note column
+        
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 5; // Only Note column is editable
             }
         };
         
@@ -517,34 +623,11 @@ public class ReprintUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        configureDownloadColumn(table);
-        configureCompleteColumn(table);
+        // Set fixed column widths
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
         
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel createCompleteTablePanel(Object[][] data) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(0xC4D7E9));
-        
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer"};
-        
-        JTable table = new JTable(new DefaultTableModel(data, columnNames)) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
-                if (row % 2 == 0) {
-                    c.setBackground(Color.WHITE);
-                } else {
-                    c.setBackground(new Color(0xC4D7E9));
-                }
-                return c;
-            }
-        };
-        
-        table.setRowHeight(30);
-        table.setGridColor(Color.DARK_GRAY);
+        configureNoteColumnForComplete(table);
         
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
