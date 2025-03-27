@@ -268,21 +268,18 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
      * Downloads a file from the SFTP server.
      */
     public void pickAndDownloadFile(String downloadPath) {
-        // Ask user to select a folder
-        String localPath = selectDownloadFolder();
-
         // Call downloadFile with the selected path
-        downloadFile(downloadPath, Optional.ofNullable(localPath));
+        downloadFile(downloadPath);
     }
     
-    public void downloadFile(String downlodPath, Optional<String> localPath ) {
+    public void downloadFile(String downlodPath ) {
     	
     	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
         String remoteFilePath = downlodPath;
         String[] dataSplit = remoteFilePath.split("/");
         String fileName = dataSplit[dataSplit.length - 1];
         String userHome = System.getProperty("user.home");
-        String localFilePath = (localPath != null)? localPath.get() : (userHome + "\\Public\\JOG-Desktop\\" + fileName);
+        String localFilePath = (userHome + "\\Public\\JOG-Desktop\\" + fileName);
 
         Session session = null;
         ChannelSftp channel = null;
