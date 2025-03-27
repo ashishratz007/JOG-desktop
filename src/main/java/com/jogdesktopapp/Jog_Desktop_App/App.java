@@ -4,6 +4,7 @@ import java.awt.*;
 import java.net.Socket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+
 import java.net.URI;
 
 import javax.swing.SwingUtilities;
@@ -14,13 +15,14 @@ public class App {
 	static SocketModel socketModel = SocketModel.getInstance();
 //    static SynologyServerModel synologyServer = SynologyServerModel.getInstance(); // Initialize the singleton
 	static SftpUploader sftpClient = SftpUploader.getInstance(); // actions client for upload download and many more
-
+	// to make work easier to filter you data
+	static GlobalDataClass globalData = GlobalDataClass.getInstance();
 	public static void main(String[] args) {
 		PermissionRequest.main(args);
 		EventQueue.invokeLater(() -> {
 			try {  
 //                synologyServer.init(); // Now it won't be null
-				AppFrame window = new AppFrame();
+				AppFrame window =  AppFrame.getInstance();
 				window.setVisible(true);
 				EventQueue.invokeLater(() -> {
 					new SwingWorker<Void, Void>() {

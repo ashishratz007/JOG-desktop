@@ -13,6 +13,7 @@ import org.json.JSONObject;
 
 public class ApiCalls {
     
+	// confirm your upload to synology server
     public static String confirmUpload(String id, String path,  String base64Image) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_synology.php";
         String jsonInputString = "{\"order_id\": \"" + id + "\", \"synology_path\": \"" + path + "\", \"image\": \"" + base64Image + "\"}";
@@ -121,4 +122,132 @@ public class ApiCalls {
         return pendingFiles;
     }
  
+    // get reprint list items
+    public static ReprintModel getReprintList(int status, int limit, int page, String startDate, String endDate) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/get_reprint_list.php";
+        ReprintModel reprintModel = null;
+
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject postData = new JSONObject();
+            postData.put("status", status);
+            postData.put("limit", limit);
+            postData.put("page", page);
+            postData.put("start_date", startDate);
+            postData.put("end_date", endDate);
+            
+            OutputStream os = conn.getOutputStream();
+            os.write(postData.toString().getBytes());
+            os.flush();
+            os.close();
+
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch reprint list! HTTP error code: " + conn.getResponseCode());
+                return null;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            reprintModel = ReprintModel.fromJson(jsonResponse);
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching reprint list: " + e.getMessage());
+        }
+
+        return reprintModel;
+    }
+    // get reprint list items
+    public static RedesignModel getRedesignList(int status, int limit, int page, String startDate, String endDate) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/get_redesign_list.php";
+        RedesignModel redesignModel = null;
+
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject postData = new JSONObject();
+            postData.put("status", status);
+            postData.put("limit", limit);
+            postData.put("page", page);
+            postData.put("start_date", startDate);
+            postData.put("end_date", endDate);
+            
+            OutputStream os = conn.getOutputStream();
+            os.write(postData.toString().getBytes());
+            os.flush();
+            os.close();
+
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch reprint list! HTTP error code: " + conn.getResponseCode());
+                return null;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            redesignModel = RedesignModel.fromJson(jsonResponse);
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching redesigner list: " + e.getMessage());
+        }
+
+        return redesignModel;
+    }
+
+	// confirm your pending file status
+    public static String markComplete(boolean isReprint, String fileId) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/update_status.php";
+        String table_name = isReprint? "reprint" :"redeign";
+        String jsonInputString = "{\"table_name\": \"" + "reprint" + "\", \"rep_id\": \"" + fileId + "\", \"status\": \"" + "1" + "\"}";
+        
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+            	System.out.println("Path setup sucess");
+                return "Success: " + responseCode;
+            } else {
+            	System.out.println("Path setup Error");
+                return "Failed: " + responseCode;
+            }
+        } catch (Exception e) {
+        	System.out.println("Path setup Error");
+            return "Error: " + e.getMessage();
+        }
+    }
+    
+
 }

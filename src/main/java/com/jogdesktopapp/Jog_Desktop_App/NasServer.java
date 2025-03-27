@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.table.DefaultTableModel;
+
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -156,7 +157,7 @@ public class NasServer implements SftpUploaderListener {
         frame.add(titlePanel, BorderLayout.NORTH);
 //        frame.add(datePanel, BorderLayout.CENTER);
 //        frame.add( Utills.space(50));
-        frame.add(tabbedPane, BorderLayout.SOUTH);
+        frame.add(tabbedPane, BorderLayout.CENTER);
 
         frame.setVisible(true);
         return frame;

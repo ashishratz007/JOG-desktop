@@ -1,6 +1,7 @@
 package com.jogdesktopapp.Jog_Desktop_App;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +31,7 @@ public class Dashboard {
         rowPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 0));
 
         // Add components
-        rowPanel.add(createContainer("Printers", new Printers().view()));
+//        rowPanel.add(createContainer("Printers", new Printers().view()));
    
         rowPanel.add(createContainer("NAS Server", new NASServerInfo().view()));
       

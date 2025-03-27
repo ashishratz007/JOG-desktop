@@ -2,6 +2,9 @@ package com.jogdesktopapp.Jog_Desktop_App;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Rectangle2D;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -13,48 +16,60 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-import com.jogdesktopapp.Jog_Desktop_App.models.EpsToPngConverter;
-import com.jogdesktopapp.Jog_Desktop_App.models.NotificationService;
+public class AppFrame extends JFrame {
+    private JPanel contentPanel;
+    private JPanel[] tabs;
+    private JLabel[] tabLabels;
+    private BadgeLabel[] tabBadges;
+    private final String[] tabNames = {"Dashboard", "NAS Server","Reprint", "Redesign"};
+    
+    private int reprintCount =  GlobalDataClass.getInstance().reprintPendingData.totalCount;
+    private int redesignCount =  GlobalDataClass.getInstance().redesignPendingData.totalCount;
+    
+    private static AppFrame instance;
+    
+    public static AppFrame getInstance() {
+        if (instance == null) {
+            instance = new AppFrame();
+        }
+        return instance;
+    }
 
-class AppFrame extends JFrame {
-    private JPanel contentPanel; // Main content panel for displaying views
-    private JPanel[] tabs; // Array to hold sidebar tabs
-    private JLabel[] tabLabels; // Labels for sidebar tabs
-    private final String[] tabNames = {"Dashboard", "Printers", "NAS Server", "Web Sockets"}; // Tab names
-
-    public AppFrame() {
+    private AppFrame() {
         initialize();
     }
 
     private void initialize() {
-        // Set up the main frame
-        setTitle("App Frame");
+        // Frame setup
+        setTitle("JOG Desktop App");
         setBounds(100, 100, 1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout());
 
-        // Sidebar Panel Setup
+        // Sidebar Panel
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setPreferredSize(new Dimension(150, getHeight()));
         sidebar.setBackground(new Color(240, 240, 240));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200))); // Adds right border
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)));
 
-        // Initialize sidebar tabs
+        // Initialize tabs and badges
         tabs = new JPanel[tabNames.length];
         tabLabels = new JLabel[tabNames.length];
+        tabBadges = new BadgeLabel[tabNames.length];
+        
         for (int i = 0; i < tabNames.length; i++) {
             tabs[i] = createTab(tabNames[i], i);
             sidebar.add(tabs[i]);
         }
         getContentPane().add(sidebar, BorderLayout.WEST);
 
-        // Top App Bar Setup
+        // Top App Bar
         JPanel appbar = new JPanel(new BorderLayout());
         appbar.setBackground(Color.WHITE);
-        appbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200))); // Bottom border
+        appbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
 
-        // Logo setup
+        // Logo
         ImageIcon logoIcon = new ImageIcon("icons/logo.png");
         Image logoImage = logoIcon.getImage().getScaledInstance(150, 50, Image.SCALE_SMOOTH);
         JLabel logoLabel = new JLabel(new ImageIcon(logoImage));
@@ -64,58 +79,43 @@ class AppFrame extends JFrame {
         logoLabel.setBackground(new Color(240, 240, 240));
         appbar.add(logoLabel, BorderLayout.WEST);
 
-        // Title in app bar
+        // Title
         JLabel titleLabel = new JLabel("Your Status");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         appbar.add(titleLabel, BorderLayout.CENTER);
 
-     // Status Panel Setup
+        // Status Panel (Original Implementation)
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         statusPanel.setBackground(Color.WHITE);
 
-        // Gradient Container for Status
-        GradientPanel statusContainer = new GradientPanel(AppColors.GRADIENT_START, AppColors.GRADIENT_END);
-        statusContainer.setPreferredSize(new Dimension(80, 30)); // Fixed width & height
-
-        // Circular Status Dot with Green Color
+        // Status Dot (Green)
         StatusDot statusDot = new StatusDot(new Color(132, 226, 89));
-
-        // Status Label
+        
+        // Status Label with original click listener
         JLabel statusLabel = new JLabel("Online");
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-     // Add click listener
         statusLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("Clicked event");
-
+                System.out.println("Status label clicked");
                 new SwingWorker<Void, String>() {
                     @Override
                     protected Void doInBackground() {
-                    	EpsToPngConverter convetor = new EpsToPngConverter();
-                    	convetor.main();
+                      
                         return null;
                     }
                     @Override
                     protected void done() {
-                       //TODO
+                        // TODO
                     }
                 }.execute();
             }
         });
 
-
-        statusContainer.add(statusDot);
-        statusContainer.add(statusLabel);
-
-        // Add statusContainer to statusPanel
-        statusPanel.add(statusContainer);
+        statusPanel.add(statusDot);
+        statusPanel.add(statusLabel);
         appbar.add(statusPanel, BorderLayout.EAST);
-
-
-
-        // allign appbar
         getContentPane().add(appbar, BorderLayout.NORTH);
 
         // Main content panel
@@ -127,22 +127,33 @@ class AppFrame extends JFrame {
         setSelectedTab(0);
     }
 
-    // Creates a sidebar tab
     private JPanel createTab(String name, int index) {
-        JPanel tab = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        JPanel tab = new JPanel(new BorderLayout());
         tab.setPreferredSize(new Dimension(150, 40));
         tab.setMaximumSize(new Dimension(150, 40));
         tab.setBackground(new Color(240, 240, 240));
 
-        JLabel label = new JLabel(name);
+        JLabel label = new JLabel("  " + name);
         label.setFont(new Font("Arial", Font.PLAIN, 14));
-        tab.add(label);
+        tab.add(label, BorderLayout.WEST);
 
-        // Add click listener for tab selection
+        // Badge container with top-right alignment
+        JPanel badgeContainer = new JPanel(new BorderLayout());
+        badgeContainer.setOpaque(false);
+        badgeContainer.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 15));
+        
+        BadgeLabel badge = new BadgeLabel();
+        tabBadges[index] = badge;
+        badgeContainer.add(badge, BorderLayout.EAST);
+        tab.add(badgeContainer, BorderLayout.EAST);
+
         tab.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                setSelectedTab(index);
+                setSelectedTab(index); 
+                 reprintCount =  GlobalDataClass.getInstance().reprintPendingData.totalCount;
+                 redesignCount =  GlobalDataClass.getInstance().redesignPendingData.totalCount;
+                updateBadges();
             }
         });
 
@@ -150,24 +161,20 @@ class AppFrame extends JFrame {
         return tab;
     }
 
-    // Handles tab selection and updates the content panel
     private void setSelectedTab(int selectedIndex) {
         for (int i = 0; i < tabs.length; i++) {
             if (i == selectedIndex) {
-                // Highlight selected tab
                 tabs[i].setBackground(new Color(0, 102, 204));
                 tabLabels[i].setForeground(Color.WHITE);
                 
-                // Update content panel based on selected tab 
                 contentPanel.removeAll();
                 switch (i) {
-                    case 0: contentPanel.add(new Dashboard().view(), BorderLayout.CENTER); break;
-                    case 1: contentPanel.add(new PrinterModel().view(), BorderLayout.CENTER); break;
-                    case 2: contentPanel.add(new NasServer().view(), BorderLayout.CENTER); break;
-                    case 3: contentPanel.add(new WebSockets().view(), BorderLayout.CENTER); break;
+                    case 0: contentPanel.add(new Dashboard().view(), BorderLayout.CENTER); break;                
+                    case 1: contentPanel.add(new NasServer().view(), BorderLayout.CENTER); break;
+                    case 2: contentPanel.add(new ReprintUi().getView(), BorderLayout.CENTER); break;
+                    case 3: contentPanel.add(new RedesignUi().getView(), BorderLayout.CENTER); break;
                 }
             } else {
-                // Reset non-selected tabs
                 tabs[i].setBackground(new Color(240, 240, 240));
                 tabLabels[i].setForeground(Color.BLACK);
             }
@@ -175,66 +182,156 @@ class AppFrame extends JFrame {
         contentPanel.revalidate();
         contentPanel.repaint();
     }
-}
 
-
-class GradientPanel extends JPanel {
-    private final Color startColor;
-    private final Color endColor;
-
-    public GradientPanel(Color startColor, Color endColor) {
-        this.startColor = startColor;
-        this.endColor = endColor;
-        setOpaque(false); // Allow custom painting
+    public void updateBadges() {
+        tabBadges[2].setCount(reprintCount);
+        tabBadges[3].setCount(redesignCount);
+        
+        for (JPanel tab : tabs) {
+            tab.revalidate();
+            tab.repaint();
+        }
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
+    // Getters and setters for counts
+    public int getReprintCount() {
+        return reprintCount;
+    }
 
-        // Enable anti-aliasing
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    public void setReprintCount(int count) {
+    	count = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+        this.reprintCount = count;
+        updateBadges();
+    }
 
-        // Draw gradient background
-        GradientPaint gradient = new GradientPaint(0, 0, startColor, getWidth(), getHeight(), endColor);
-        g2.setPaint(gradient);
-        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10); // Rounded corners
+    public int getRedesignCount() {
+        return redesignCount;
+    }
 
-        // Draw border with GRADIENT_END color
-        g2.setColor(AppColors.GRADIENT_END);
-        g2.setStroke(new BasicStroke(2));
-        g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 10, 10); // Border inside container
+    public void setRedesignCount(int count) {
+    	count = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+        this.redesignCount = count;
+        updateBadges();
+    }
+
+    // BadgeLabel class with blinking functionality
+    class BadgeLabel extends JLabel {
+        private int count = 0;
+        private final Color badgeColor = new Color(255, 59, 48);
+        private Timer blinkTimer;
+        private boolean isVisible = true;
+        private int previousCount = 0;
+
+        public BadgeLabel() {
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setVerticalAlignment(SwingConstants.CENTER);
+            setForeground(Color.WHITE);
+            setFont(new Font("Arial", Font.BOLD, 10));
+            setVisible(false);
+            setOpaque(false);
+        }
+
+        public void setCount(int newCount) {
+            // Blink only if count increased
+            if (newCount > previousCount) {
+                startBlinking();
+            }
+            previousCount = count;
+            this.count = newCount;
+            setText(newCount > 99 ? "99+" : String.valueOf(newCount));
+            setVisible(newCount > 0);
+            repaint();
+        }
+
+        public void startBlinking() {
+            stopBlinking(); // Clear any existing timer
+            
+            blinkTimer = new Timer(true); // Daemon thread
+            isVisible = true;
+            
+            blinkTimer.scheduleAtFixedRate(new TimerTask() {
+                private int blinkCount = 0;
+                private final int totalBlinks = 10; // 5 seconds (500ms * 10)
+
+                @Override
+                public void run() {
+                    SwingUtilities.invokeLater(() -> {
+                        isVisible = !isVisible;
+                        repaint();
+                        blinkCount++;
+                        if (blinkCount >= totalBlinks) {
+                            stopBlinking();
+                        }
+                    });
+                }
+            }, 0, 500); // Blink every 500ms
+        }
+
+        public void stopBlinking() {
+            if (blinkTimer != null) {
+                blinkTimer.cancel();
+                blinkTimer = null;
+            }
+            isVisible = true;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (count > 0 && isVisible) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Calculate size based on digit count
+                int diameter;
+                if (count < 10) diameter = 18;
+                else if (count < 100) diameter = 22;
+                else diameter = 26;
+                
+                // Draw perfect circle
+                g2.setColor(badgeColor);
+                g2.fillOval(0, 0, diameter, diameter);
+                
+                // Draw centered text
+                FontMetrics fm = g2.getFontMetrics();
+                Rectangle2D textBounds = fm.getStringBounds(getText(), g2);
+                int textX = (diameter - (int)textBounds.getWidth()) / 2;
+                int textY = (diameter - (int)textBounds.getHeight()) / 2 + fm.getAscent();
+                
+                g2.setColor(Color.WHITE);
+                g2.drawString(getText(), textX, textY);
+                g2.dispose();
+            }
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            if (count < 10) return new Dimension(18, 18);
+            if (count < 100) return new Dimension(22, 22);
+            return new Dimension(26, 26);
+        }
+    }
+
+    // StatusDot class for the green indicator
+    class StatusDot extends JPanel {
+        private final Color fillColor;
+
+        public StatusDot(Color fillColor) {
+            this.fillColor = fillColor;
+            setPreferredSize(new Dimension(14, 14));
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(fillColor);
+            g2.fillOval(2, 2, getWidth() - 4, getHeight() - 4);
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(2));
+            g2.drawOval(2, 2, getWidth() - 4, getHeight() - 4);
+        }
     }
 }
-
-//Custom JPanel for a perfect circular dot
-class StatusDot extends JPanel {
- private final Color fillColor;
-
- public StatusDot(Color fillColor) {
-     this.fillColor = fillColor;
-     setPreferredSize(new Dimension(14, 14)); // Fixed size for a perfect circle
-     setOpaque(false);
- }
-
- @Override
- protected void paintComponent(Graphics g) {
-     super.paintComponent(g);
-     Graphics2D g2 = (Graphics2D) g;
-
-     // Enable anti-aliasing for smooth edges
-     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-     // Draw filled circle with GREEN color
-     g2.setColor(fillColor);
-     g2.fillOval(2, 2, getWidth() - 4, getHeight() - 4); // Centered
-
-     // Draw white border
-     g2.setColor(Color.WHITE);
-     g2.setStroke(new BasicStroke(2)); // Border thickness
-     g2.drawOval(2, 2, getWidth() - 4, getHeight() - 4);
- }
-}
-
-

@@ -6,8 +6,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import com.jogdesktopapp.Jog_Desktop_App.models.NotificationService;
 
 public class SocketModel extends WebSocketClient {
     private static SocketModel instance;
@@ -37,7 +41,7 @@ public class SocketModel extends WebSocketClient {
     @Override
     public void onMessage(String message) {
         System.out.println("📩 Received: " + message);
-        handleAction(message);
+        SwingUtilities.invokeLater(() -> handleAction(message));
     }
 
     @Override
@@ -54,7 +58,7 @@ public class SocketModel extends WebSocketClient {
     public void reconnect() {
         System.out.println("🔄 Attempting to reconnect...");
         try {
-            Thread.sleep(3000); // Wait before reconnecting
+            Thread.sleep(3000);
             getInstance();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -64,42 +68,70 @@ public class SocketModel extends WebSocketClient {
 
     private void handleAction(String message) {
         String action = parseAction(message);
+        JSONObject data = new JSONObject(message);
+        
         switch (action) {
             case "upload_files":
-            
                 System.out.println("📤 Handling file upload action");
                 JSONObject json = new JSONObject(message);
                 JSONArray filePathsArray = json.optJSONArray("file_paths");
                 JSONArray fileIdsArray = json.optJSONArray("file_ids");
-                String orderCode = json.optString("order_code", ""); 
+                String orderCode = json.optString("order_code", "");
 
-                System.out.println("📤 Keys are:  " + orderCode);
+                System.out.println("📤 Keys are: " + orderCode);
 
                 if (filePathsArray != null && fileIdsArray != null) {
-                	List<UploadFile> pendingFiles = new ArrayList<>();
+                    List<UploadFile> pendingFiles = new ArrayList<>();
                     for (int i = 0; i < filePathsArray.length(); i++) {
                         String filePath = filePathsArray.optString(i);
                         String fileId = fileIdsArray.optString(i);
-                        UploadFile fileData = new UploadFile(fileId, filePath, "pending",orderCode);
+                        UploadFile fileData = new UploadFile(fileId, filePath, "pending", orderCode);
                         pendingFiles.add(fileData);
                         System.out.println("📤 adding file");
-                        
                     }
                     App.sftpClient.addFiles(pendingFiles); 
                 } else {
                     System.out.println("⚠️ No file paths or file IDs found.");
                 }
+                break;
+                
+            case "redesign_request":
+                
+                
+                GlobalDataClass globalData = GlobalDataClass.getInstance();
+                globalData.getRedesignData(1); 
+
+                int designerId = data.getInt("designer_id");
+                String designerName = data.getString("designer_name");
+                
+                NotificationService.showNotification(
+                    "Redesign Request", 
+                    "A redesign request has been received. Assigned Designer: " + designerName + "."
+                ); 
+             // Update redesign count
+                AppFrame appFrame = AppFrame.getInstance();
+                appFrame.setRedesignCount(appFrame.getRedesignCount() + 1);
+                break;
+                
+            case "reprint_notification":
                
+                
+                GlobalDataClass globalDat = GlobalDataClass.getInstance();
+                globalDat.getReprintData(1);
+                
+                int fileId = data.getInt("file_id");
+                long barcode = data.getLong("barcode");
+                String printerName = data.getString("printer_name");
+                
+                NotificationService.showNotification(
+                    "Reprint Notification",
+                    "A reprint request has been received. Printer: " + printerName + "."
+                );
+             // Update reprint count
+                AppFrame frame = AppFrame.getInstance();
+                frame.setReprintCount(frame.getReprintCount() + 1);
                 break;
-            case "ACTION_CONNECT":
-                System.out.println("🔗 Handling connect action");
-                break;
-            case "ACTION_DISCONNECT":
-                System.out.println("🔌 Handling disconnect action");
-                break;
-            case "ACTION_MESSAGE":
-                System.out.println("💬 Handling message action");
-                break;
+                
             default:
                 System.out.println("❓ Unknown action: " + action);
                 break;

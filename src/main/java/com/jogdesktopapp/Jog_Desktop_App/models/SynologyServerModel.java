@@ -1,4 +1,4 @@
-package com.jogdesktopapp.Jog_Desktop_App;
+package com.jogdesktopapp.Jog_Desktop_App.models;
 
 import okhttp3.*;
 import com.fasterxml.jackson.databind.JsonNode;

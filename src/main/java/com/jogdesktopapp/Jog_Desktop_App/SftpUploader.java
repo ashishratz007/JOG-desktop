@@ -10,6 +10,8 @@ import java.time.Year;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+
 import org.json.JSONObject;
 
 public class SftpUploader {
@@ -265,14 +267,22 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
     /**
      * Downloads a file from the SFTP server.
      */
-    public void downloadFile() {
+    public void pickAndDownloadFile(String downloadPath) {
+        // Ask user to select a folder
+        String localPath = selectDownloadFolder();
+
+        // Call downloadFile with the selected path
+        downloadFile(downloadPath, Optional.ofNullable(localPath));
+    }
+    
+    public void downloadFile(String downlodPath, Optional<String> localPath ) {
     	
     	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
-        String remoteFilePath = REMOTE_UPLOAD_DIR + "/file1.eps";
+        String remoteFilePath = downlodPath;
         String[] dataSplit = remoteFilePath.split("/");
         String fileName = dataSplit[dataSplit.length - 1];
         String userHome = System.getProperty("user.home");
-        String localFilePath = userHome + "\\Public\\JOG-Desktop\\" + fileName;
+        String localFilePath = (localPath != null)? localPath.get() : (userHome + "\\Public\\JOG-Desktop\\" + fileName);
 
         Session session = null;
         ChannelSftp channel = null;
@@ -302,6 +312,22 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
             if (channel != null) channel.disconnect();
             if (session != null) session.disconnect();
         }
+    }
+
+    // Pick the folder from a directory
+    private String selectDownloadFolder() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select a folder to save the file");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY); // Only allow directories
+
+        int userSelection = fileChooser.showOpenDialog(null);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File selectedFolder = fileChooser.getSelectedFile();
+            return selectedFolder.getAbsolutePath(); // Return selected folder path
+        }
+
+        return null; // Return null if the user cancels the selection
     }
 }
 
