@@ -23,11 +23,11 @@ public  class ReprintModel {
     
     public int pageCount() {
         if (totalCount <= 0) {
-            return 0;  // No items means no pages
+            return 0;
         }
-        
-        return (totalCount) / 10;
-     
+        System.out.println("pending list count : " + totalCount);
+        int pages = totalCount / 10;
+        return (totalCount % 10 == 0) ? pages  : pages + 1;
     }
 
     public static ReprintModel fromJson(JSONObject jsonObj) {
@@ -49,9 +49,10 @@ class ReprintItem {
     String exCode;
     String printerName;
     String synologyPath;
+    String created_on;
     String note;
 
-    public ReprintItem(int reprintId, String fileName, String orderName, String exCode, String synologyPath,String printerName, String note) {
+    public ReprintItem(int reprintId, String fileName, String orderName, String exCode, String synologyPath,String printerName, String note, String created_on) {
         this.reprintId = reprintId;
         this.fileName = fileName;
         this.orderName = orderName;
@@ -59,6 +60,7 @@ class ReprintItem {
         this.synologyPath = synologyPath;
         this.exCode = exCode;
         this.note = note;
+        this.created_on = created_on;
     }
 
     public static ReprintItem fromJson(JSONObject jsonObj) {
@@ -69,7 +71,8 @@ class ReprintItem {
             jsonObj.getString("exCode"),
             jsonObj.getString("synology_path"),
             jsonObj.optString("printerName", ""),
-            jsonObj.optString("note", "")
+            jsonObj.optString("note", ""),
+            jsonObj.optString("created_on", "")
         );
     }
 }

@@ -3,6 +3,7 @@ package com.jogdesktopapp.Jog_Desktop_App;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,7 +70,11 @@ public class SocketModel extends WebSocketClient {
     private void handleAction(String message) {
         String action = parseAction(message);
         JSONObject data = new JSONObject(message);
+        LocalDate today = LocalDate.now();
         
+        // Get the date one year before today
+        LocalDate oneYearAgo = today.minusYears(1);
+
         switch (action) {
             case "upload_files":
                 System.out.println("📤 Handling file upload action");
@@ -99,7 +104,8 @@ public class SocketModel extends WebSocketClient {
                 
                 
                 GlobalDataClass globalData = GlobalDataClass.getInstance();
-                globalData.getRedesignData(1); 
+                
+                globalData.getRedesignData(1,oneYearAgo, today); 
 
                 int designerId = data.getInt("designer_id");
                 String designerName = data.getString("designer_name");
@@ -108,16 +114,14 @@ public class SocketModel extends WebSocketClient {
                     "Redesign Request", 
                     "A redesign request has been received. Assigned Designer: " + designerName + "."
                 ); 
-             // Update redesign count
-                AppFrame appFrame = AppFrame.getInstance();
-                appFrame.setRedesignCount(appFrame.getRedesignCount() + 1);
+             
                 break;
                 
             case "reprint_notification":
                
                 
                 GlobalDataClass globalDat = GlobalDataClass.getInstance();
-                globalDat.getReprintData(1);
+                globalDat.getReprintData(1,oneYearAgo, today);
                 
                 int fileId = data.getInt("file_id");
                 long barcode = data.getLong("barcode");
@@ -127,9 +131,6 @@ public class SocketModel extends WebSocketClient {
                     "Reprint Notification",
                     "A reprint request has been received. Printer: " + printerName + "."
                 );
-             // Update reprint count
-                AppFrame frame = AppFrame.getInstance();
-                frame.setReprintCount(frame.getReprintCount() + 1);
                 break;
                 
             default:

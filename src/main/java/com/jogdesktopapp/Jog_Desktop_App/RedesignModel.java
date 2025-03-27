@@ -17,11 +17,11 @@ public class RedesignModel {
     
     public int pageCount() {
         if (totalCount <= 0) {
-            return 0;  // No items means no pages
+            return 0;
         }
-        
-        return (totalCount) / 10;
-     
+        System.out.println("pending list count : " + totalCount);
+        int pages = totalCount / 10;
+        return (totalCount % 10 == 0) ? pages : pages + 1;
     }
     public static RedesignModel fromJson(JSONObject jsonObj) {
         int totalCount = jsonObj.getInt("total_count");
@@ -43,8 +43,9 @@ class RedesignItem {
     String note;
     String synologyPath;
     String designerName;
+    String created_on;
 
-    public RedesignItem(int redesignId, String orderName, String fileName, String exCode, String note, String synologyPath, String designerName) {
+    public RedesignItem(int redesignId, String orderName, String fileName, String exCode, String note, String synologyPath, String designerName, String created_on) {
         this.redesignId = redesignId;
         this.orderName = orderName;
         this.fileName = fileName;
@@ -52,6 +53,7 @@ class RedesignItem {
         this.note = note;
         this.synologyPath = synologyPath;
         this.designerName = designerName;
+        this.created_on = created_on;
     }
 
     public static RedesignItem fromJson(JSONObject jsonObj) {
@@ -62,7 +64,8 @@ class RedesignItem {
             jsonObj.getString("exCode"),
             jsonObj.optString("note", ""),
             jsonObj.optString("synology_path", ""),
-            jsonObj.optString("designerName", "")
+            jsonObj.optString("designerName", ""),
+            jsonObj.optString("created_on", "")
         );
     }
 }

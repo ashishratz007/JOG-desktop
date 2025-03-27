@@ -199,7 +199,7 @@ public class AppFrame extends JFrame {
     }
 
     public void setReprintCount(int count) {
-    	count = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+    	count = GlobalDataClass.getInstance().reprintPendingData.totalCount;
         this.reprintCount = count;
         updateBadges();
     }
