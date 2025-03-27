@@ -268,8 +268,9 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
      * Downloads a file from the SFTP server.
      */
     public void pickAndDownloadFile(String downloadPath) {
-        // Call downloadFile with the selected path
-        downloadFile(downloadPath);
+    	
+        downloadFile(downloadPath); 
+        
     }
     
     public void downloadFile(String downlodPath ) {
