@@ -280,7 +280,8 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
         String[] dataSplit = remoteFilePath.split("/");
         String fileName = dataSplit[dataSplit.length - 1];
         String userHome = System.getProperty("user.home");
-        String localFilePath = (userHome + "\\Public\\JOG-Desktop\\" + fileName);
+//        String localFilePath = (userHome + "\\Public\\JOG-Desktop\\" + fileName);
+        String localFilePath = selectDownloadFolder() + fileName;
 
         Session session = null;
         ChannelSftp channel = null;
