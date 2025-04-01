@@ -6,17 +6,18 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import javax.swing.SwingUtilities;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import com.jogdesktopapp.Jog_Desktop_App.models.NotificationService;
 
 public class SocketModel extends WebSocketClient {
     private static SocketModel instance;
     private static final String SERVER_URL = "ws://socket.jog-joinourgame.com:8080";
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+    private boolean connected = false;
 
     private SocketModel(URI serverUri) {
         super(serverUri);
@@ -37,6 +38,9 @@ public class SocketModel extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         System.out.println("✅ Connected to WebSocket Server");
+        boolean oldValue = this.connected;
+        this.connected = true;
+        propertyChangeSupport.firePropertyChange("connected", oldValue, this.connected);
     }
 
     @Override
@@ -48,12 +52,18 @@ public class SocketModel extends WebSocketClient {
     @Override
     public void onClose(int code, String reason, boolean remote) {
         System.out.println("❌ Disconnected: " + reason);
+        boolean oldValue = this.connected;
+        this.connected = false;
+        propertyChangeSupport.firePropertyChange("connected", oldValue, this.connected);
         reconnect();
     }
 
     @Override
     public void onError(Exception ex) {
         System.err.println("⚠️ Error: " + ex.getMessage());
+        boolean oldValue = this.connected;
+        this.connected = false;
+        propertyChangeSupport.firePropertyChange("connected", oldValue, this.connected);
     }
 
     public void reconnect() {
@@ -67,12 +77,19 @@ public class SocketModel extends WebSocketClient {
         }
     }
 
+    // Property change support methods
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(propertyName, listener);
+    }
+    
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+
     private void handleAction(String message) {
         String action = parseAction(message);
         JSONObject data = new JSONObject(message);
         LocalDate today = LocalDate.now();
-        
-        // Get the date one year before today
         LocalDate oneYearAgo = today.minusYears(1);
 
         switch (action) {
@@ -101,12 +118,8 @@ public class SocketModel extends WebSocketClient {
                 break;
                 
             case "redesign_request":
-                
-                
                 GlobalDataClass globalData = GlobalDataClass.getInstance();
-                
-                globalData.getRedesignData(1,oneYearAgo, today); 
-
+                globalData.getRedesignData(1, oneYearAgo, today); 
                 int designerId = data.getInt("designer_id");
                 String designerName = data.getString("designer_name");
                 
@@ -114,15 +127,11 @@ public class SocketModel extends WebSocketClient {
                     "Redesign Request", 
                     "A redesign request has been received. Assigned Designer: " + designerName + "."
                 ); 
-             
                 break;
                 
             case "reprint_notification":
-               
-                
                 GlobalDataClass globalDat = GlobalDataClass.getInstance();
-                globalDat.getReprintData(1,oneYearAgo, today);
-                
+                globalDat.getReprintData(1, oneYearAgo, today);
                 int fileId = data.getInt("file_id");
                 long barcode = data.getLong("barcode");
                 String printerName = data.getString("printer_name");

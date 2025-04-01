@@ -249,5 +249,125 @@ public class ApiCalls {
         }
     }
     
+   // downloaded file
+    public static DownloadedFilesModel getDownlaodedList( int limit, int page) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_downloaded_files.php";
+        DownloadedFilesModel downlodedModel = null;
 
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject postData = new JSONObject();
+            postData.put("limit", limit);
+            postData.put("page", page);
+
+            OutputStream os = conn.getOutputStream();
+            os.write(postData.toString().getBytes());
+            os.flush();
+            os.close();
+
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch reprint list! HTTP error code: " + conn.getResponseCode());
+                return null;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            downlodedModel = DownloadedFilesModel.fromJson(jsonResponse);
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching dwonloaded list: " + e.getMessage());
+        }
+
+        return downlodedModel;
+    }
+    
+   // Uploaded file
+    public static UploadedFilesModel getUploadedList( int limit, int page) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_uploaded_files.php";
+        UploadedFilesModel uploadedModel = null; 
+
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject postData = new JSONObject();
+            postData.put("limit", limit);
+            postData.put("page", page);
+
+            OutputStream os = conn.getOutputStream();
+            os.write(postData.toString().getBytes());
+            os.flush();
+            os.close();
+
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch reprint list! HTTP error code: " + conn.getResponseCode());
+                return null;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            uploadedModel = UploadedFilesModel.fromJson(jsonResponse);
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching upladed list: " + e.getMessage());
+        }
+
+        return uploadedModel;
+    }
+
+	// confirm your download to local system
+    public static String confirmDownload(String id) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_file_download.php";
+        String jsonInputString = "{\"file_id\": \"" + id + "\",}";
+        
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+            	System.out.println("Path setup sucess");
+                return "Success: " + responseCode;
+            } else {
+            	System.out.println("Path setup Error");
+                throw new Error("Failed: " + responseCode);
+            }
+        } catch (Exception e) {
+        	System.out.println("Path setup Error");
+            throw new Error("Error: " + e.getMessage());
+        }
+    }
+    
 }

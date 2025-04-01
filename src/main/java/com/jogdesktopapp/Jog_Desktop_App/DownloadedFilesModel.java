@@ -1,6 +1,7 @@
 package com.jogdesktopapp.Jog_Desktop_App;
 
 
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.BufferedReader;
@@ -12,11 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public  class ReprintModel {
-    int totalCount;
-    List<ReprintItem> data;
+public  class DownloadedFilesModel { 
+    int totalCount; 
+    List<DownloadedFile> data;
 
-    public ReprintModel(int totalCount, List<ReprintItem> data) {
+    public DownloadedFilesModel(int totalCount, List<DownloadedFile> data) {
         this.totalCount = totalCount;
         this.data = data;
     }
@@ -30,52 +31,42 @@ public  class ReprintModel {
         return (totalCount % 10 == 0) ? pages  : pages + 1;
     }
 
-    public static ReprintModel fromJson(JSONObject jsonObj) {
-        int totalCount = jsonObj.getInt("total_count");
+    public static DownloadedFilesModel fromJson(JSONObject jsonObj) {
+        int totalCount = jsonObj.getInt("totalCount");
         JSONArray dataArray = jsonObj.getJSONArray("data");
-        List<ReprintItem> itemList = new ArrayList<>();
+        List<DownloadedFile> itemList = new ArrayList<>();
         
         for (int i = 0; i < dataArray.length(); i++) {
-            itemList.add(ReprintItem.fromJson(dataArray.getJSONObject(i)));
+            itemList.add(DownloadedFile.fromJson(dataArray.getJSONObject(i)));
         }
-        return new ReprintModel(totalCount, itemList);
+        return new DownloadedFilesModel(totalCount, itemList);
     }
 }
 
-class ReprintItem {
-    int reprintId;
+class DownloadedFile { 
     String fileName;
     String orderName;
     String exCode;
-    String printerName;
     String synologyPath;
     String created_on;
-    String note;
-    String file_id;
 
-    public ReprintItem(int reprintId, String fileName, String orderName, String exCode, String synologyPath,String printerName, String note, String created_on, String file_id) {
-        this.reprintId = reprintId;
+    public DownloadedFile(String fileName, String orderName, String exCode, String synologyPath, String created_on) {
+       
         this.fileName = fileName;
         this.orderName = orderName;
-        this.printerName = printerName;
         this.synologyPath = synologyPath;
         this.exCode = exCode;
-        this.note = note;
+      
         this.created_on = created_on;
-        this.file_id = file_id;
     }
 
-    public static ReprintItem fromJson(JSONObject jsonObj) {
-        return new ReprintItem(
-            jsonObj.getInt("reprint_id"),
+    public static DownloadedFile fromJson(JSONObject jsonObj) {
+        return new DownloadedFile(
             jsonObj.getString("fileName"),
             jsonObj.getString("orderName"),
             jsonObj.getString("exCode"),
             jsonObj.getString("synology_path"),
-            jsonObj.optString("printerName", ""),
-            jsonObj.optString("note", ""),
-            jsonObj.optString("created_on", ""),
-            jsonObj.optString("file_id", "")
+            jsonObj.optString("created_on", "")
         );
     }
 }

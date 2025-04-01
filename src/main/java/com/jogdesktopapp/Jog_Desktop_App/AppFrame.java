@@ -1,11 +1,13 @@
 package com.jogdesktopapp.Jog_Desktop_App;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -23,10 +25,12 @@ public class AppFrame extends JFrame {
     private BadgeLabel[] tabBadges;
     private final String[] tabNames = {"Dashboard", "NAS Server","Reprint", "Redesign"};
     
-    private int reprintCount =  GlobalDataClass.getInstance().reprintPendingData.totalCount;
-    private int redesignCount =  GlobalDataClass.getInstance().redesignPendingData.totalCount;
+    private int reprintCount = GlobalDataClass.getInstance().reprintPendingData.totalCount;
+    private int redesignCount = GlobalDataClass.getInstance().redesignPendingData.totalCount;
     
     private static AppFrame instance;
+    private StatusDot statusDot;
+    private JLabel statusLabel;
     
     public static AppFrame getInstance() {
         if (instance == null) {
@@ -37,6 +41,7 @@ public class AppFrame extends JFrame {
 
     private AppFrame() {
         initialize();
+        initializeSocketStatusListener();
     }
 
     private void initialize() {
@@ -85,15 +90,15 @@ public class AppFrame extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         appbar.add(titleLabel, BorderLayout.CENTER);
 
-        // Status Panel (Original Implementation)
+        // Status Panel
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         statusPanel.setBackground(Color.WHITE);
 
-        // Status Dot (Green)
-        StatusDot statusDot = new StatusDot(new Color(132, 226, 89));
+        // Status Dot
+        statusDot = new StatusDot(new Color(132, 226, 89));
         
-        // Status Label with original click listener
-        JLabel statusLabel = new JLabel("Online");
+        // Status Label
+        statusLabel = new JLabel("Online");
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         statusLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -102,7 +107,6 @@ public class AppFrame extends JFrame {
                 new SwingWorker<Void, String>() {
                     @Override
                     protected Void doInBackground() {
-                      
                         return null;
                     }
                     @Override
@@ -127,6 +131,34 @@ public class AppFrame extends JFrame {
         setSelectedTab(0);
     }
 
+    private void initializeSocketStatusListener() {
+        SocketModel socket = SocketModel.getInstance();
+        
+        socket.addPropertyChangeListener("connected", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                boolean isConnected = (boolean) evt.getNewValue();
+                updateConnectionStatus(isConnected);
+            }
+        });
+        
+        // Initial status update
+        updateConnectionStatus(socket.isOpen());
+    }
+
+    private void updateConnectionStatus(boolean isConnected) {
+        SwingUtilities.invokeLater(() -> {
+            if (isConnected) {
+                statusDot.setFillColor(new Color(132, 226, 89)); // Green
+                statusLabel.setText("Online");
+            } else {
+                statusDot.setFillColor(new Color(255, 59, 48)); // Red
+                statusLabel.setText("Offline");
+            }
+            statusDot.repaint();
+        });
+    }
+
     private JPanel createTab(String name, int index) {
         JPanel tab = new JPanel(new BorderLayout());
         tab.setPreferredSize(new Dimension(150, 40));
@@ -137,7 +169,6 @@ public class AppFrame extends JFrame {
         label.setFont(new Font("Arial", Font.PLAIN, 14));
         tab.add(label, BorderLayout.WEST);
 
-        // Badge container with top-right alignment
         JPanel badgeContainer = new JPanel(new BorderLayout());
         badgeContainer.setOpaque(false);
         badgeContainer.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 15));
@@ -151,8 +182,8 @@ public class AppFrame extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 setSelectedTab(index); 
-                 reprintCount =  GlobalDataClass.getInstance().reprintPendingData.totalCount;
-                 redesignCount =  GlobalDataClass.getInstance().redesignPendingData.totalCount;
+                reprintCount = GlobalDataClass.getInstance().reprintPendingData.totalCount;
+                redesignCount = GlobalDataClass.getInstance().redesignPendingData.totalCount;
                 updateBadges();
             }
         });
@@ -193,13 +224,12 @@ public class AppFrame extends JFrame {
         }
     }
 
-    // Getters and setters for counts
     public int getReprintCount() {
         return reprintCount;
     }
 
     public void setReprintCount(int count) {
-    	count = GlobalDataClass.getInstance().reprintPendingData.totalCount;
+        count = GlobalDataClass.getInstance().reprintPendingData.totalCount;
         this.reprintCount = count;
         updateBadges();
     }
@@ -209,12 +239,11 @@ public class AppFrame extends JFrame {
     }
 
     public void setRedesignCount(int count) {
-    	count = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+        count = GlobalDataClass.getInstance().redesignPendingData.totalCount;
         this.redesignCount = count;
         updateBadges();
     }
 
-    // BadgeLabel class with blinking functionality
     class BadgeLabel extends JLabel {
         private int count = 0;
         private final Color badgeColor = new Color(255, 59, 48);
@@ -232,7 +261,6 @@ public class AppFrame extends JFrame {
         }
 
         public void setCount(int newCount) {
-            // Blink only if count increased
             if (newCount > previousCount) {
                 startBlinking();
             }
@@ -244,14 +272,14 @@ public class AppFrame extends JFrame {
         }
 
         public void startBlinking() {
-            stopBlinking(); // Clear any existing timer
+            stopBlinking();
             
-            blinkTimer = new Timer(true); // Daemon thread
+            blinkTimer = new Timer(true);
             isVisible = true;
             
             blinkTimer.scheduleAtFixedRate(new TimerTask() {
                 private int blinkCount = 0;
-                private final int totalBlinks = 10; // 5 seconds (500ms * 10)
+                private final int totalBlinks = 10;
 
                 @Override
                 public void run() {
@@ -264,7 +292,7 @@ public class AppFrame extends JFrame {
                         }
                     });
                 }
-            }, 0, 500); // Blink every 500ms
+            }, 0, 500);
         }
 
         public void stopBlinking() {
@@ -282,17 +310,14 @@ public class AppFrame extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Calculate size based on digit count
                 int diameter;
                 if (count < 10) diameter = 18;
                 else if (count < 100) diameter = 22;
                 else diameter = 26;
                 
-                // Draw perfect circle
                 g2.setColor(badgeColor);
                 g2.fillOval(0, 0, diameter, diameter);
                 
-                // Draw centered text
                 FontMetrics fm = g2.getFontMetrics();
                 Rectangle2D textBounds = fm.getStringBounds(getText(), g2);
                 int textX = (diameter - (int)textBounds.getWidth()) / 2;
@@ -312,14 +337,18 @@ public class AppFrame extends JFrame {
         }
     }
 
-    // StatusDot class for the green indicator
     class StatusDot extends JPanel {
-        private final Color fillColor;
+        private Color fillColor;
 
         public StatusDot(Color fillColor) {
             this.fillColor = fillColor;
             setPreferredSize(new Dimension(14, 14));
             setOpaque(false);
+        }
+
+        public void setFillColor(Color fillColor) {
+            this.fillColor = fillColor;
+            repaint();
         }
 
         @Override

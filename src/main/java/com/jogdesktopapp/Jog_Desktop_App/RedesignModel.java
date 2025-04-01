@@ -44,8 +44,9 @@ class RedesignItem {
     String synologyPath;
     String designerName;
     String created_on;
+    String file_id;
 
-    public RedesignItem(int redesignId, String orderName, String fileName, String exCode, String note, String synologyPath, String designerName, String created_on) {
+    public RedesignItem(int redesignId, String orderName, String fileName, String exCode, String note, String synologyPath, String designerName, String created_on,String file_id) {
         this.redesignId = redesignId;
         this.orderName = orderName;
         this.fileName = fileName;
@@ -54,6 +55,7 @@ class RedesignItem {
         this.synologyPath = synologyPath;
         this.designerName = designerName;
         this.created_on = created_on;
+        this.file_id = file_id;
     }
 
     public static RedesignItem fromJson(JSONObject jsonObj) {
@@ -65,7 +67,8 @@ class RedesignItem {
             jsonObj.optString("note", ""),
             jsonObj.optString("synology_path", ""),
             jsonObj.optString("designerName", ""),
-            jsonObj.optString("created_on", "")
+            jsonObj.optString("created_on", ""),
+            jsonObj.optString("file_id", "")
         );
     }
 }

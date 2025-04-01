@@ -269,13 +269,13 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
     /**
      * Downloads a file from the SFTP server.
      */
-    public void pickAndDownloadFile(String downloadPath) {
+    public void pickAndDownloadFile(String fileId,   String downloadPath) {
     	
-        downloadFile(downloadPath); 
+        downloadFile(fileId, downloadPath); 
         
     }
     
-public void downloadFile(String downloadPath) {
+public void downloadFile(String fileId, String downloadPath) {
     notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");
@@ -310,6 +310,7 @@ public void downloadFile(String downloadPath) {
             if (downloadedFile.exists()) {
                 Desktop.getDesktop().open(downloadedFile.getParentFile());
             }
+            ApiCalls.confirmDownload(fileId);
         } catch (IOException e) {
             System.err.println("❌ Failed to open download folder: " + e.getMessage());
         }

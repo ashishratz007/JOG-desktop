@@ -217,7 +217,7 @@ public class ReprintUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
             data[i][4] = file.printerName;
-            data[i][5] = file.synologyPath;
+            data[i][5] = file.synologyPath + "," + file.file_id;
             data[i][6] = file.reprintId;
             data[i][7] = file.note != null ? file.note : "";
         }
@@ -348,11 +348,15 @@ public class ReprintUi {
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String filePath = e.getActionCommand();
+            	 String actionCommand = e.getActionCommand();
+            	    // Split the string into path and ID using the last comma
+            	    String[] parts = actionCommand.split(",(?=[^,]+$)");
+                String filePath = parts[0];
+                String fileId = parts[1];
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() throws Exception {
-                        App.sftpClient.pickAndDownloadFile(filePath);
+                        App.sftpClient.pickAndDownloadFile(fileId, filePath);
                         return null;
                     }
                     @Override

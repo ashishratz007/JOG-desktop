@@ -41,8 +41,8 @@ public class RedesignUi {
     int maxWidth = 100;
     
     public RedesignUi() {
-        pendingPanel = createPendingTablePanel(new Object[0][5]); // Changed from 4 to 5
-        completePanel = createCompleteTablePanel(new Object[0][5]); // Changed from 4 to 5
+        pendingPanel = createPendingTablePanel(new Object[0][6]); // Changed to 6 columns
+        completePanel = createCompleteTablePanel(new Object[0][5]);
         initializeUI();
         refreshData();
     }
@@ -205,7 +205,7 @@ public class RedesignUi {
     
     private void displayPendingPage(int pageNumber) {
         List<RedesignItem> pageItems = pending.data;
-        Object[][] data = new Object[pageItems.size()][5]; // Changed from 4 to 5
+        Object[][] data = new Object[pageItems.size()][6];
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
@@ -213,7 +213,8 @@ public class RedesignUi {
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
-            data[i][4] = file.note != null ? file.note : ""; // Added note column
+            data[i][4] = file.synologyPath + "," + file.file_id; // Path and ID combined
+            data[i][5] = file.note != null ? file.note : "";
         }
         
         refreshPendingTable(data);
@@ -221,7 +222,7 @@ public class RedesignUi {
     
     private void displayCompletePage(int pageNumber) {
         List<RedesignItem> pageItems = complete.data;
-        Object[][] data = new Object[pageItems.size()][5]; // Changed from 4 to 5
+        Object[][] data = new Object[pageItems.size()][5];
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
@@ -229,7 +230,7 @@ public class RedesignUi {
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
-            data[i][4] = file.note != null ? file.note : ""; // Added note column
+            data[i][4] = file.note != null ? file.note : "";
         }
         
         refreshCompleteTable(data);
@@ -237,14 +238,12 @@ public class RedesignUi {
     
     private String formatDate(String dateString) {
         try {
-            // First try parsing with space separator
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime;
             
             try {
                 dateTime = LocalDateTime.parse(dateString, formatter);
             } catch (Exception e) {
-                // If that fails, try with ISO format (with T separator)
                 dateTime = LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             }
             
@@ -271,12 +270,12 @@ public class RedesignUi {
     }
     
     private JScrollPane createPendingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Download", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only Note column is editable
+                return column == 4 || column == 5; // Download and Note columns are editable
             }
         };
         
@@ -294,17 +293,20 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        // Set fixed column width for Note column
-        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
+        // Set fixed column widths
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
         
+        configureDownloadColumn(table);
         configureNoteColumn(table);
         
         return new JScrollPane(table);
     }
     
     private JScrollPane createCompleteTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
@@ -336,9 +338,41 @@ public class RedesignUi {
         return new JScrollPane(table);
     }
     
-    private void configureNoteColumn(JTable table) {
-        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer("icons/note.png"));
+    private void configureDownloadColumn(JTable table) {
+        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer("icons/download.png"));
         table.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String actionCommand = e.getActionCommand();
+                String[] parts = actionCommand.split(",(?=[^,]+$)");
+                
+                if (parts.length == 2) {
+                    String filePath = parts[0].trim();
+                    String fileId = parts[1].trim();
+                    
+                    new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            App.sftpClient.pickAndDownloadFile(fileId, filePath);
+                            return null;
+                        }
+                        
+                        @Override
+                        protected void done() {
+                            System.out.println("File download completed for ID: " + fileId);
+                        }
+                    }.execute();
+                } else {
+                    System.err.println("Invalid action command format. Expected 'path,id'");
+                }
+            }
+        }, "icons/download.png"));
+    }
+    
+    private void configureNoteColumn(JTable table) {
+        int noteColumn = table.getColumnCount() - 1; // Note is always last column
+        table.getColumnModel().getColumn(noteColumn).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(noteColumn).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String note = e.getActionCommand();
@@ -475,12 +509,12 @@ public class RedesignUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Download", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only Note column is editable
+                return column == 4 || column == 5; // Download and Note columns are editable
             }
         };
         
@@ -498,10 +532,13 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        // Set fixed column width for Note column
-        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
+        // Set fixed column widths
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
         
+        configureDownloadColumn(table);
         configureNoteColumn(table);
         
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
@@ -512,7 +549,7 @@ public class RedesignUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"}; // Added Note column
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
@@ -587,5 +624,34 @@ public class RedesignUi {
     
     public JPanel getView() {
         return mainPanel;
+    }
+}
+
+class ButtonEditor extends DefaultCellEditor {
+    private final JButton button;
+    private String value;
+    
+    public ButtonEditor(Action action, String iconPath) {
+        super(new JCheckBox());
+        this.button = new JButton();
+        button.setOpaque(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setIcon(new ImageIcon(iconPath));
+        button.addActionListener(action);
+    }
+    
+    @Override
+    public Component getTableCellEditorComponent(JTable table, Object value, 
+            boolean isSelected, int row, int column) {
+        this.value = (value != null) ? value.toString() : "";
+        button.setActionCommand(this.value);
+        return button;
+    }
+    
+    @Override
+    public Object getCellEditorValue() {
+        return value;
     }
 }
