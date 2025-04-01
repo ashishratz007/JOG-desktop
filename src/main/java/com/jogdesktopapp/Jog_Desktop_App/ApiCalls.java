@@ -340,8 +340,9 @@ public class ApiCalls {
 	// confirm your download to local system
     public static String confirmDownload(String id) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_file_download.php";
-        String jsonInputString = "{\"file_id\": \"" + id + "\",}";
-        
+       
+        JSONObject postData = new JSONObject();
+        postData.put("file_id", id);
         try {
             URL url = new URL(apiUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -352,7 +353,7 @@ public class ApiCalls {
             
 
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
+                byte[] input = postData.toString().getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
 
