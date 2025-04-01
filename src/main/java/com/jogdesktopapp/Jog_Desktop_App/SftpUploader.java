@@ -310,7 +310,7 @@ public void downloadFile(String fileId, String downloadPath) {
             if (downloadedFile.exists()) {
                 Desktop.getDesktop().open(downloadedFile.getParentFile());
             }
-//            ApiCalls.confirmDownload(fileId);
+            ApiCalls.confirmDownload(fileId);
         } catch (IOException e) {
             System.err.println("❌ Failed to open download folder: " + e.getMessage());
         }

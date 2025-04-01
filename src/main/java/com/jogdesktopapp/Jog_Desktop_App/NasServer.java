@@ -22,21 +22,36 @@ public class NasServer implements SftpUploaderListener {
 
     @Override
     public void onStatusChanged(SftpUploaderStatus newStatus) {
+        System.out.println("🔄 Status changed to: " + newStatus);
         SwingUtilities.invokeLater(() -> {
             setStatusPanel(newStatus);
+            fillPendingData();
         });
     }
     
     @Override
     public void onPendingChanged() {
+        System.out.println("🔄 onPendingChanged() callback received - refreshing live data");
         SwingUtilities.invokeLater(() -> {
+            System.out.println("🏁 Executing fillPendingData() on EDT");
             fillPendingData();
         });
     }
     
     void fillPendingData() {
+    	 System.out.println("🏁 Executing fillPendingData() on EDT");
+        if (App.sftpClient == null) {
+            System.out.println("⚠️ Error: sftpClient is null");
+            return;
+        }
+        
+        if (App.sftpClient.pendingUpload == null) {
+            System.out.println("⚠️ Warning: pendingUpload list is null");
+            return;
+        }
+
         List<UploadFile> pendingUpload = App.sftpClient.pendingUpload;
-        System.out.println("📤 pending notification invoked.");
+        System.out.println("📤 Filling pending data. Found " + pendingUpload.size() + " items");
         
         Object[][] data = new Object[pendingUpload.size()][2];
         for (int i = 0; i < pendingUpload.size(); i++) {
@@ -44,15 +59,23 @@ public class NasServer implements SftpUploaderListener {
             String fileName = file.getPath().substring(file.getPath().lastIndexOf("/") + 1);
             data[i][0] = fileName;
             data[i][1] = file.getPath();
+            System.out.println("📄 Item " + (i+1) + ": " + fileName + " | " + file.getPath());
         }
         
+        // Clear and rebuild the live panel
         livePanel.removeAll();
-        livePanel.add(createTable(data, "Live"));
+        JScrollPane table = createTable(data, "Live");
+        livePanel.setLayout(new BorderLayout());
+        livePanel.add(table, BorderLayout.CENTER);
+        
+        // Force UI update
         livePanel.revalidate();
         livePanel.repaint();
+        System.out.println("✅ Live data UI updated");
     }
 
     void setStatusPanel(SftpUploaderStatus newStatus) {
+        System.out.println("🔄 Updating status panel to: " + newStatus);
         statusLabel.removeAll();
         statusLabel.setLayout(new GridBagLayout()); 
         statusLabel.setPreferredSize(new Dimension(120, 20));
@@ -85,8 +108,19 @@ public class NasServer implements SftpUploaderListener {
     }
 
     public JPanel view() {
+    	
+    	SwingUtilities.invokeLater(() -> {
+    		fillPendingData();
+        });
+        System.out.println("🏗️ Building NAS Server view");
         App.sftpClient.addStatusListener(this);
         setStatusPanel(App.sftpClient.currentStatus); 
+        
+        // Initialize live panel
+        livePanel.removeAll();
+        livePanel.setLayout(new BorderLayout());
+        livePanel.add(createTable(new Object[0][2], "Live"), BorderLayout.CENTER);
+        livePanel.revalidate();
         
         JPanel frame = new JPanel();
         frame.setBackground(Color.WHITE);
@@ -116,24 +150,29 @@ public class NasServer implements SftpUploaderListener {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 10));
         
-        // Add tabs with empty data initially
+        // Add tabs
         tabbedPane.addTab("Live", livePanel);
         tabbedPane.addTab("Download", downloadPanel);
         tabbedPane.addTab("Upload", uploadPanel);
         
         tabbedPane.setUI(new CustomTabUI());
         
-        // Add change listener to load data when tabs are selected
+        // Add change listener
         tabbedPane.addChangeListener(e -> {
             int selectedIndex = tabbedPane.getSelectedIndex();
-            if (selectedIndex == 1) { // Download tab
+            System.out.println("🔘 Tab changed to index: " + selectedIndex);
+          if(selectedIndex == 0) {
+        	  System.out.println("Pending file length is :  " +  App.sftpClient.pendingUpload.size());
+        	  fillPendingData();
+          }
+            else if (selectedIndex == 1) {
                 loadDownloadData(currentDownloadPage);
-            } else if (selectedIndex == 2) { // Upload tab
+            } else if (selectedIndex == 2) {
                 loadUploadData(currentUploadPage);
             }
         });
 
-        // Create pagination panel
+        // Pagination panel
         JPanel pageControlPanel = new JPanel(new BorderLayout());
         pageControlPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         pageControlPanel.setBackground(Color.WHITE);
@@ -148,14 +187,16 @@ public class NasServer implements SftpUploaderListener {
         frame.add(titlePanel, BorderLayout.NORTH);
         frame.add(contentPanel, BorderLayout.CENTER);
 
+        System.out.println("✅ NAS Server view built successfully");
         return frame;
     }
 
     private void loadDownloadData(int page) {
+        System.out.println("⏳ Loading download data for page " + page);
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
-                DownloadedFilesModel model = ApiCalls.getDownlaodedList(ITEMS_PER_PAGE, page);
+                DownloadedFilesModel model = ApiCalls.getDownloadedList(ITEMS_PER_PAGE, page);
                 SwingUtilities.invokeLater(() -> updateDownloadTable(model));
                 return null;
             }
@@ -163,6 +204,7 @@ public class NasServer implements SftpUploaderListener {
     }
 
     private void loadUploadData(int page) {
+        System.out.println("⏳ Loading upload data for page " + page);
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
@@ -174,8 +216,12 @@ public class NasServer implements SftpUploaderListener {
     }
 
     private void updateDownloadTable(DownloadedFilesModel model) {
-        if (model == null) return;
+        if (model == null) {
+            System.out.println("⚠️ No download data received");
+            return;
+        }
         
+        System.out.println("🔄 Updating download table with " + model.data.size() + " items");
         Object[][] data = new Object[model.data.size()][2];
         for (int i = 0; i < model.data.size(); i++) {
             DownloadedFile file = model.data.get(i);
@@ -184,15 +230,19 @@ public class NasServer implements SftpUploaderListener {
         }
         
         downloadPanel.removeAll();
-        downloadPanel.add(createTable(data, "Download"));
+        downloadPanel.add(createTable(data, "Download"), BorderLayout.CENTER);
         updatePageButtons(model.totalCount, currentDownloadPage, "download");
         downloadPanel.revalidate();
         downloadPanel.repaint();
     }
 
     private void updateUploadTable(UploadedFilesModel model) {
-        if (model == null) return;
+        if (model == null) {
+            System.out.println("⚠️ No upload data received");
+            return;
+        }
         
+        System.out.println("🔄 Updating upload table with " + model.data.size() + " items");
         Object[][] data = new Object[model.data.size()][2];
         for (int i = 0; i < model.data.size(); i++) {
             UploadedFile file = model.data.get(i);
@@ -201,22 +251,25 @@ public class NasServer implements SftpUploaderListener {
         }
         
         uploadPanel.removeAll();
-        uploadPanel.add(createTable(data, "Upload"));
+        uploadPanel.add(createTable(data, "Upload"), BorderLayout.CENTER);
         updatePageButtons(model.totalCount, currentUploadPage, "upload");
         uploadPanel.revalidate();
         uploadPanel.repaint();
     }
 
     private void updatePageButtons(int totalCount, int currentPage, String type) {
+        System.out.println("🔄 Updating pagination for " + type + ", total items: " + totalCount);
         pagesPanel.removeAll();
         
         int totalPages = (int) Math.ceil((double) totalCount / ITEMS_PER_PAGE);
         if (totalPages == 0) totalPages = 1;
         
+        System.out.println("📖 Total pages: " + totalPages + ", current page: " + currentPage);
         for (int i = 1; i <= totalPages; i++) {
             JButton button = createPageButton(i, i == currentPage);
             int page = i;
             button.addActionListener(e -> {
+                System.out.println("🔘 Page button clicked: " + page + " for " + type);
                 if ("download".equals(type)) {
                     currentDownloadPage = page;
                     loadDownloadData(page);

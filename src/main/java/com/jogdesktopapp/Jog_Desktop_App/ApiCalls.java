@@ -250,7 +250,7 @@ public class ApiCalls {
     }
     
    // downloaded file
-    public static DownloadedFilesModel getDownlaodedList( int limit, int page) {
+    public static DownloadedFilesModel getDownloadedList( int limit, int page) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_downloaded_files.php";
         DownloadedFilesModel downlodedModel = null;
 
