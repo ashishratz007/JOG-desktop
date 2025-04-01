@@ -273,7 +273,53 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
         
     }
     
-    public void downloadFile(String downlodPath ) {
+public void downloadFile(String downloadPath) {
+    notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
+    String remoteFilePath = downloadPath;
+    String[] dataSplit = remoteFilePath.split("/");
+    String fileName = dataSplit[dataSplit.length - 1];
+    String pickedPath = selectDownloadFolder();
+    String localFilePath = pickedPath + "\\" + fileName;
+
+    Session session = null;
+    ChannelSftp channel = null;
+
+    try {
+        JSch jsch = new JSch();
+        session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
+        session.setPassword(PASSWORD);
+        session.setConfig("StrictHostKeyChecking", "no");
+        session.connect(15_000);
+
+        channel = (ChannelSftp) session.openChannel("sftp");
+        channel.connect(10_000);
+
+        notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
+
+        try (FileOutputStream fos = new FileOutputStream(localFilePath)) {
+            channel.get(remoteFilePath, fos);
+        }
+
+        notifyStatusChange(SftpUploaderStatus.IDLE);
+
+        // Open the downloaded folder in file explorer
+        try {
+            File downloadedFile = new File(localFilePath);
+            if (downloadedFile.exists()) {
+                Desktop.getDesktop().open(downloadedFile.getParentFile());
+            }
+        } catch (IOException e) {
+            System.err.println("❌ Failed to open download folder: " + e.getMessage());
+        }
+
+    } catch (JSchException | SftpException | IOException e) {
+        System.err.println("❌ SFTP Download Error: " + e.getMessage());
+    } finally {
+        notifyStatusChange(SftpUploaderStatus.IDLE);
+        if (channel != null) channel.disconnect();
+        if (session != null) session.disconnect();
+    }
+}
     	
     	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
         String remoteFilePath = downlodPath;
@@ -281,7 +327,8 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
         String fileName = dataSplit[dataSplit.length - 1];
         String userHome = System.getProperty("user.home");
 //        String localFilePath = (userHome + "\\Public\\JOG-Desktop\\" + fileName);
-        String localFilePath = selectDownloadFolder() + fileName;
+        String pickedPath = selectDownloadFolder();
+        String localFilePath = pickedPath + "\\" + fileName;
 
         Session session = null;
         ChannelSftp channel = null;
