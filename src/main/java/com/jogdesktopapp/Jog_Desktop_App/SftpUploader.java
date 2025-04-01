@@ -3,6 +3,8 @@ package com.jogdesktopapp.Jog_Desktop_App;
 import com.jcraft.jsch.*;
 
 import javax.swing.*;
+
+import java.awt.Desktop;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -320,46 +322,7 @@ public void downloadFile(String downloadPath) {
         if (session != null) session.disconnect();
     }
 }
-    	
-    	notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
-        String remoteFilePath = downlodPath;
-        String[] dataSplit = remoteFilePath.split("/");
-        String fileName = dataSplit[dataSplit.length - 1];
-        String userHome = System.getProperty("user.home");
-//        String localFilePath = (userHome + "\\Public\\JOG-Desktop\\" + fileName);
-        String pickedPath = selectDownloadFolder();
-        String localFilePath = pickedPath + "\\" + fileName;
-
-        Session session = null;
-        ChannelSftp channel = null;
-
-        try {
-            JSch jsch = new JSch();
-            session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
-            session.setPassword(PASSWORD);
-            session.setConfig("StrictHostKeyChecking", "no");
-            session.connect(15_000);
-
-            channel = (ChannelSftp) session.openChannel("sftp");
-            channel.connect(10_000);
-
-            notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
-
-            try (FileOutputStream fos = new FileOutputStream(localFilePath)) {
-                channel.get(remoteFilePath, fos);
-            }
-
-            notifyStatusChange(SftpUploaderStatus.IDLE);
-
-        } catch (JSchException | SftpException | IOException e) {
-            System.err.println("❌ SFTP Download Error: " + e.getMessage());
-        } finally {
-        	notifyStatusChange(SftpUploaderStatus.IDLE);
-            if (channel != null) channel.disconnect();
-            if (session != null) session.disconnect();
-        }
-    }
-
+    
     // Pick the folder from a directory
     private String selectDownloadFolder() {
         JFileChooser fileChooser = new JFileChooser();
