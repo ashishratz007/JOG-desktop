@@ -358,14 +358,14 @@ public class ApiCalls {
 
             int responseCode = conn.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-            	System.out.println("Path setup sucess");
+            	System.out.println("download status setup sucess");
                 return "Success: " + responseCode;
             } else {
-            	System.out.println("Path setup Error");
+            	System.out.println("download status setup Error");
                 throw new Error("Failed: " + responseCode);
             }
         } catch (Exception e) {
-        	System.out.println("Path setup Error");
+        	System.out.println("download status setup Error");
             throw new Error("Error: " + e.getMessage());
         }
     }
