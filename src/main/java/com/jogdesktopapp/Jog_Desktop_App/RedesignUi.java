@@ -41,7 +41,7 @@ public class RedesignUi {
     int maxWidth = 100;
     
     public RedesignUi() {
-        pendingPanel = createPendingTablePanel(new Object[0][6]); // Changed to 6 columns
+        pendingPanel = createPendingTablePanel(new Object[0][7]); // Changed to 7 columns (added Complete column)
         completePanel = createCompleteTablePanel(new Object[0][5]);
         initializeUI();
         refreshData();
@@ -145,10 +145,23 @@ public class RedesignUi {
         tabbedPane.setUI(new CustomTabUIReprint());
         
         tabbedPane.addChangeListener(e -> {
-            updatePageButtonsForCurrentTab();
+            tabbedPaneChanged();
         });
         
         return tabbedPane;
+    }
+    
+    private void tabbedPaneChanged() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex == 0) {
+            // When switching to Pending tab
+            displayPendingPage(currentPendingPage);
+            updatePageButtons(pending.pageCount(), currentPendingPage);
+        } else {
+            // When switching to Complete tab
+            displayCompletePage(currentCompletePage);
+            updatePageButtons(complete.pageCount(), currentCompletePage);
+        }
     }
     
     private JPanel createPageFilterPanel() {
@@ -190,22 +203,25 @@ public class RedesignUi {
     }
     
     private void fillPendingData() {
-        GlobalDataClass globalData = GlobalDataClass.getInstance();
         pending = globalData.redesignPendingData;
         displayPendingPage(currentPendingPage);
         updatePageButtonsForCurrentTab();
     }
     
     private void fillCompleteData() {
-        GlobalDataClass globalData = GlobalDataClass.getInstance();
         complete = globalData.designCompleteData;
         displayCompletePage(currentCompletePage);
         updatePageButtonsForCurrentTab();
     }
     
     private void displayPendingPage(int pageNumber) {
+        if (pending == null || pending.data == null) {
+            System.err.println("Pending data is null");
+            return;
+        }
+        
         List<RedesignItem> pageItems = pending.data;
-        Object[][] data = new Object[pageItems.size()][6];
+        Object[][] data = new Object[pageItems.size()][7]; // Changed to 7 columns
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
@@ -213,14 +229,20 @@ public class RedesignUi {
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
-            data[i][4] = file.synologyPath + "," + file.file_id; // Path and ID combined
-            data[i][5] = file.note != null ? file.note : "";
+            data[i][4] = file.synologyPath + "," + file.file_id;
+            data[i][5] = file.file_id; // For Complete action
+            data[i][6] = file.note != null ? file.note : "";
         }
         
         refreshPendingTable(data);
     }
     
     private void displayCompletePage(int pageNumber) {
+        if (complete == null || complete.data == null) {
+            System.err.println("Complete data is null");
+            return;
+        }
+        
         List<RedesignItem> pageItems = complete.data;
         Object[][] data = new Object[pageItems.size()][5];
         
@@ -270,12 +292,12 @@ public class RedesignUi {
     }
     
     private JScrollPane createPendingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Download", "Note"};
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4 || column == 5; // Download and Note columns are editable
+                return column == 4 || column == 5 || column == 6; // Download, Complete, and Note columns are editable
             }
         };
         
@@ -296,10 +318,13 @@ public class RedesignUi {
         // Set fixed column widths
         table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Complete
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
         
         configureDownloadColumn(table);
+        configureCompleteColumn(table);
         configureNoteColumn(table);
         
         return new JScrollPane(table);
@@ -369,6 +394,40 @@ public class RedesignUi {
         }, "icons/download.png"));
     }
     
+    private void configureCompleteColumn(JTable table) {
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("icons/complete.png"));
+        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int response = JOptionPane.showConfirmDialog(null, 
+                    "Are you sure you want to set this to complete?", 
+                    "Confirm Action", 
+                    JOptionPane.OK_CANCEL_OPTION, 
+                    JOptionPane.QUESTION_MESSAGE);
+                
+                if (response == JOptionPane.OK_OPTION) {
+                    new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            ApiCalls.markComplete(false, e.getActionCommand());
+                            App.globalData.getRedesignData(currentPendingPage, startDate, endDate);
+                            App.globalData.getRedesignCompleteData(currentCompletePage, startDate, endDate);
+                            return null;
+                        }
+                        
+                        @Override
+                        protected void done() {
+                            SwingUtilities.invokeLater(() -> {
+                                fillPendingData();
+                                fillCompleteData();
+                            });
+                        }
+                    }.execute();
+                }
+            }
+        }, "icons/complete.png"));
+    }
+    
     private void configureNoteColumn(JTable table) {
         int noteColumn = table.getColumnCount() - 1; // Note is always last column
         table.getColumnModel().getColumn(noteColumn).setCellRenderer(getButtonRenderer("icons/note.png"));
@@ -419,46 +478,66 @@ public class RedesignUi {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
             currentPendingPage = pageNumber;
-            displayPendingPage(pageNumber);
+            loadPendingData(pageNumber);
         } else {
             currentCompletePage = pageNumber;
-            displayCompletePage(pageNumber);
+            loadCompleteData(pageNumber);
         }
-        
         logPageSelection(pageNumber);
+    }
+    
+    private void loadPendingData(int pageNumber) {
+        setStatusPanel("Loading pending data...");
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    App.globalData.getRedesignData(pageNumber, startDate, endDate);
+                } catch (Exception e) {
+                    System.err.println("Error loading pending data: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                SwingUtilities.invokeLater(() -> {
+                    setStatusPanel("Idle");
+                    fillPendingData();
+                });
+            }
+        }.execute();
+    }
+
+    private void loadCompleteData(int pageNumber) {
+        setStatusPanel("Loading complete data...");
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    App.globalData.getRedesignCompleteData(pageNumber, startDate, endDate);
+                } catch (Exception e) {
+                    System.err.println("Error loading complete data: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                SwingUtilities.invokeLater(() -> {
+                    setStatusPanel("Idle");
+                    fillCompleteData();
+                });
+            }
+        }.execute();
     }
     
     private void logPageSelection(int pageNumber) {
         statusLabel.setToolTipText("Selected Page: " + pageNumber);
         String timestamp = new SimpleDateFormat("HH:mm:ss.SSS").format(new Date());
         System.out.println("[" + timestamp + "] Page selected: " + pageNumber);
-        new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                int selectedIndex = tabbedPane.getSelectedIndex();
-                if (selectedIndex == 0) {
-                    currentPendingPage = pageNumber;
-                    App.globalData.getRedesignData(currentPendingPage,startDate,endDate);
-                }
-                else {
-                    currentCompletePage = pageNumber;
-                    App.globalData.getRedesignCompleteData(currentCompletePage,startDate,endDate);
-                }
-
-                SwingUtilities.invokeLater(() -> {
-                    fillPendingData();
-                    fillCompleteData();
-                });
-                return null;
-            }
-            @Override
-            protected void done() {
-                SwingUtilities.invokeLater(() -> {
-                    fillPendingData();
-                    fillCompleteData();
-                });
-            }
-        }.execute();
     }
     
     private void updatePageButtonsForCurrentTab() {
@@ -475,7 +554,8 @@ public class RedesignUi {
         
         updatePageButtons(totalPages, currentPage);
     }
-      private void updatePageButtons(int totalPages, int currentPage) {
+    
+    private void updatePageButtons(int totalPages, int currentPage) {
         pagesPanel.removeAll();
         
         // Add left arrow button if there are more than 10 pages
@@ -483,7 +563,6 @@ public class RedesignUi {
             JButton leftArrow = createArrowButton("<", currentPage == 1);
             leftArrow.addActionListener(e -> {
                 int newPage = Math.max(1, currentPage - 1);
-                System.out.println("⬅️ Left arrow clicked, moving to page " + newPage);
                 handlePageSelection(newPage);
             });
             pagesPanel.add(leftArrow);
@@ -520,7 +599,6 @@ public class RedesignUi {
             JButton rightArrow = createArrowButton(">", currentPage == totalPages);
             rightArrow.addActionListener(e -> {
                 int newPage = Math.min(totalPages, currentPage + 1);
-                System.out.println("➡️ Right arrow clicked, moving to page " + newPage);
                 handlePageSelection(newPage);
             });
             pagesPanel.add(rightArrow);
@@ -562,12 +640,12 @@ public class RedesignUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Download", "Note"};
+        String[] columnNames = {"Name of file", "Designer Name", "Ex code", "Date", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4 || column == 5; // Download and Note columns are editable
+                return column == 4 || column == 5 || column == 6;
             }
         };
         
@@ -588,10 +666,13 @@ public class RedesignUi {
         // Set fixed column widths
         table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Complete
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
         
         configureDownloadColumn(table);
+        configureCompleteColumn(table);
         configureNoteColumn(table);
         
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
@@ -607,7 +688,7 @@ public class RedesignUi {
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only Note column is editable
+                return column == 4;
             }
         };
         
@@ -660,23 +741,15 @@ public class RedesignUi {
     private void refreshDataForDateRange() {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
-            currentPendingPage = 0;
-            App.globalData.getRedesignData(currentPendingPage,startDate,endDate);
+            currentPendingPage = 1;
+            loadPendingData(currentPendingPage);
+        } else {
+            currentCompletePage = 1;
+            loadCompleteData(currentCompletePage);
         }
-        else {
-            currentCompletePage = 0;
-            App.globalData.getRedesignCompleteData(currentCompletePage,startDate,endDate);
-        }
-
-        SwingUtilities.invokeLater(() -> {
-            System.out.println("Refreshing data for date range: " + 
-                    startDate.toString() + " to " + endDate.toString());
-            refreshData();
-        });
     }
     
     public JPanel getView() {
         return mainPanel;
     }
 }
-

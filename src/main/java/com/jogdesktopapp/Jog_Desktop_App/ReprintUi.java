@@ -2,9 +2,6 @@ package com.jogdesktopapp.Jog_Desktop_App;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,7 +42,7 @@ public class ReprintUi {
     
     public ReprintUi() {
         pendingPanel = createPendingTablePanel(new Object[0][8]);
-        completePanel = createCompleteTablePanel(new Object[0][6]); // Changed from 5 to 6
+        completePanel = createCompleteTablePanel(new Object[0][6]);
         initializeUI();
         refreshData();
     }
@@ -148,10 +145,23 @@ public class ReprintUi {
         tabbedPane.setUI(new CustomTabUIReprint());
         
         tabbedPane.addChangeListener(e -> {
-            updatePageButtonsForCurrentTab();
+            tabbedPaneChanged();
         });
         
         return tabbedPane;
+    }
+    
+    private void tabbedPaneChanged() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex == 0) {
+            // When switching to Pending tab
+            displayPendingPage(currentPendingPage);
+            updatePageButtons(pending.pageCount(), currentPendingPage);
+        } else {
+            // When switching to Complete tab
+            displayCompletePage(currentCompletePage);
+            updatePageButtons(complete.pageCount(), currentCompletePage);
+        }
     }
     
     private JPanel createPageFilterPanel() {
@@ -193,20 +203,23 @@ public class ReprintUi {
     }
     
     private void fillPendingData() {
-        GlobalDataClass globalData = GlobalDataClass.getInstance();
         pending = globalData.reprintPendingData;
         displayPendingPage(currentPendingPage);
         updatePageButtonsForCurrentTab();
     }
     
     private void fillCompleteData() {
-        GlobalDataClass globalData = GlobalDataClass.getInstance();
         complete = globalData.reprintCompleteData;
         displayCompletePage(currentCompletePage);
         updatePageButtonsForCurrentTab();
     }
     
     private void displayPendingPage(int pageNumber) {
+        if (pending == null || pending.data == null) {
+            System.err.println("Pending data is null");
+            return;
+        }
+        
         List<ReprintItem> pageItems = pending.data;
         Object[][] data = new Object[pageItems.size()][8];
         
@@ -226,8 +239,13 @@ public class ReprintUi {
     }
     
     private void displayCompletePage(int pageNumber) {
+        if (complete == null || complete.data == null) {
+            System.err.println("Complete data is null");
+            return;
+        }
+        
         List<ReprintItem> pageItems = complete.data;
-        Object[][] data = new Object[pageItems.size()][6]; // Changed from 5 to 6
+        Object[][] data = new Object[pageItems.size()][6];
         
         for (int i = 0; i < pageItems.size(); i++) {
             ReprintItem file = pageItems.get(i);
@@ -236,7 +254,7 @@ public class ReprintUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
             data[i][4] = file.printerName;
-            data[i][5] = file.note != null ? file.note : ""; // Added note column
+            data[i][5] = file.note != null ? file.note : "";
         }
         
         refreshCompleteTable(data);
@@ -247,7 +265,6 @@ public class ReprintUi {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(dateString, formatter);
             dateTime = dateTime.plusHours(7);
-            System.err.println("Date for the cell is " + dateString);
             return dateTime.format(formatter);
         } catch (Exception e) {
             System.err.println("Error formatting date: " + dateString + ", error: " + e.getMessage());
@@ -270,7 +287,7 @@ public class ReprintUi {
     }
     
     private JScrollPane createPendingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Download", "Set to Complete", "Note"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
@@ -294,7 +311,7 @@ public class ReprintUi {
         table.setGridColor(Color.DARK_GRAY);
        
         // Set fixed column widths
-        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Designer
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Printer
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
         table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
@@ -311,12 +328,12 @@ public class ReprintUi {
     }
     
     private JScrollPane createCompleteTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Note"}; // Added Note column
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5; // Only Note column is editable
+                return column == 5;
             }
         };
         
@@ -348,9 +365,7 @@ public class ReprintUi {
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            	 String actionCommand = e.getActionCommand();
-            	    // Split the string into path and ID using the last comma
-            	    String[] parts = actionCommand.split(",(?=[^,]+$)");
+                String[] parts = e.getActionCommand().split(",(?=[^,]+$)");
                 String filePath = parts[0];
                 String fileId = parts[1];
                 new SwingWorker<Void, Void>() {
@@ -384,17 +399,15 @@ public class ReprintUi {
                         @Override
                         protected Void doInBackground() throws Exception {
                             ApiCalls.markComplete(true, e.getActionCommand());
-                             App.globalData.getReprintData(currentPendingPage,startDate,endDate);
-                            App.globalData.getReprintData(currentCompletePage,startDate,endDate);
-                            SwingUtilities.invokeLater(() -> {
-                                fillPendingData();
-                            });
+                            App.globalData.getReprintData(currentPendingPage, startDate, endDate);
+                            App.globalData.getReprintCompleteData(currentCompletePage, startDate, endDate);
                             return null;
                         }
                         @Override
                         protected void done() {
                             SwingUtilities.invokeLater(() -> {
                                 fillPendingData();
+                                fillCompleteData();
                             });
                         }
                     }.execute();
@@ -470,46 +483,66 @@ public class ReprintUi {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
             currentPendingPage = pageNumber;
-            displayPendingPage(pageNumber);
+            loadPendingData(pageNumber);
         } else {
             currentCompletePage = pageNumber;
-            displayCompletePage(pageNumber);
+            loadCompleteData(pageNumber);
         }
-        
         logPageSelection(pageNumber);
+    }
+    
+    private void loadPendingData(int pageNumber) {
+        setStatusPanel("Loading pending data...");
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    App.globalData.getReprintData(pageNumber, startDate, endDate);
+                } catch (Exception e) {
+                    System.err.println("Error loading pending data: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                SwingUtilities.invokeLater(() -> {
+                    setStatusPanel("Idle");
+                    fillPendingData();
+                });
+            }
+        }.execute();
+    }
+
+    private void loadCompleteData(int pageNumber) {
+        setStatusPanel("Loading complete data...");
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    App.globalData.getReprintCompleteData(pageNumber, startDate, endDate);
+                } catch (Exception e) {
+                    System.err.println("Error loading complete data: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                SwingUtilities.invokeLater(() -> {
+                    setStatusPanel("Idle");
+                    fillCompleteData();
+                });
+            }
+        }.execute();
     }
     
     private void logPageSelection(int pageNumber) {
         statusLabel.setToolTipText("Selected Page: " + pageNumber);
         String timestamp = new SimpleDateFormat("HH:mm:ss.SSS").format(new Date());
         System.out.println("[" + timestamp + "] Page selected: " + pageNumber);
-        new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                 int selectedIndex = tabbedPane.getSelectedIndex();
-                 if (selectedIndex == 0) {
-                        currentPendingPage = pageNumber;
-                        App.globalData.getReprintData(currentPendingPage,startDate,endDate);
-                 }
-                 else  {
-                     currentCompletePage = pageNumber;
-                     App.globalData.getReprintData(currentCompletePage,startDate,endDate);
-                 }
-
-                SwingUtilities.invokeLater(() -> {
-                     fillPendingData();
-                     fillCompleteData();
-                });
-                return null;
-            }
-            @Override
-            protected void done() {
-                SwingUtilities.invokeLater(() -> {
-                     fillPendingData();
-                     fillCompleteData();
-                });
-            }
-        }.execute();
     }
     
     private void updatePageButtonsForCurrentTab() {
@@ -523,11 +556,11 @@ public class ReprintUi {
             totalPages = complete.pageCount();
             currentPage = currentCompletePage;
         }
-        System.out.println("Total page count : " + totalPages);
+        
         updatePageButtons(totalPages, currentPage);
     }
     
-      private void updatePageButtons(int totalPages, int currentPage) {
+    private void updatePageButtons(int totalPages, int currentPage) {
         pagesPanel.removeAll();
         
         // Add left arrow button if there are more than 10 pages
@@ -535,7 +568,6 @@ public class ReprintUi {
             JButton leftArrow = createArrowButton("<", currentPage == 1);
             leftArrow.addActionListener(e -> {
                 int newPage = Math.max(1, currentPage - 1);
-                System.out.println("⬅️ Left arrow clicked, moving to page " + newPage);
                 handlePageSelection(newPage);
             });
             pagesPanel.add(leftArrow);
@@ -572,7 +604,6 @@ public class ReprintUi {
             JButton rightArrow = createArrowButton(">", currentPage == totalPages);
             rightArrow.addActionListener(e -> {
                 int newPage = Math.min(totalPages, currentPage + 1);
-                System.out.println("➡️ Right arrow clicked, moving to page " + newPage);
                 handlePageSelection(newPage);
             });
             pagesPanel.add(rightArrow);
@@ -614,7 +645,7 @@ public class ReprintUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Download", "Set to Complete", "Note"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
@@ -636,8 +667,9 @@ public class ReprintUi {
         
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
+        
         // Set fixed column widths
-        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Designer
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Printer
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
         table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
@@ -658,12 +690,12 @@ public class ReprintUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Designer", "Note"}; // Added Note column
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5; // Only Note column is editable
+                return column == 5;
             }
         };
         
@@ -716,19 +748,12 @@ public class ReprintUi {
     private void refreshDataForDateRange() {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
-            currentPendingPage = 0;
-            App.globalData.getRedesignData(currentPendingPage,startDate,endDate);
+            currentPendingPage = 1;
+            loadPendingData(currentPendingPage);
+        } else {
+            currentCompletePage = 1;
+            loadCompleteData(currentCompletePage);
         }
-        else {
-            currentCompletePage = 0;
-            App.globalData.getRedesignCompleteData(currentCompletePage,startDate,endDate);
-        }
-
-        SwingUtilities.invokeLater(() -> {
-            System.out.println("Refreshing data for date range: " + 
-                    startDate.toString() + " to " + endDate.toString());
-            refreshData();
-        });
     }
     
     public JPanel getView() {
