@@ -627,31 +627,3 @@ public class RedesignUi {
     }
 }
 
-class ButtonEditor extends DefaultCellEditor {
-    private final JButton button;
-    private String value;
-    
-    public ButtonEditor(Action action, String iconPath) {
-        super(new JCheckBox());
-        this.button = new JButton();
-        button.setOpaque(false);
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.setFocusPainted(false);
-        button.setIcon(new ImageIcon(iconPath));
-        button.addActionListener(action);
-    }
-    
-    @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, 
-            boolean isSelected, int row, int column) {
-        this.value = (value != null) ? value.toString() : "";
-        button.setActionCommand(this.value);
-        return button;
-    }
-    
-    @Override
-    public Object getCellEditorValue() {
-        return value;
-    }
-}

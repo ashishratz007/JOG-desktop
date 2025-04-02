@@ -5,6 +5,7 @@ import com.jcraft.jsch.*;
 import javax.swing.*;
 
 import java.awt.Desktop;
+import java.awt.EventQueue;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -117,42 +118,56 @@ public class SftpUploader {
      */
     
     public void uploadFiles() {
-        if (pendingUpload.isEmpty()) {
-            System.out.println("📤 No files to upload.");
-            return;
-        }
+    	EventQueue.invokeLater(() -> {
+			new SwingWorker<Void, Void>() {
+				@Override
+				protected Void doInBackground() throws Exception {
+					  if (pendingUpload.isEmpty()) {
+				            System.out.println("📤 No files to upload.");
+				            return null;
+				        }
 
-        System.out.println("📤 Starting batch upload...");
+				        System.out.println("📤 Starting batch upload...");
 
-        while (!pendingUpload.isEmpty()) {
-            currentFile = pendingUpload.get(0);
-            boolean success = uploadFile(currentFile.getPath(), currentFile.getOrderCode());
+				        while (!pendingUpload.isEmpty()) {
+				            currentFile = pendingUpload.get(0);
+				            boolean success = uploadFile(currentFile.getPath(), currentFile.getOrderCode());
 
-            if (success) {
+				            if (success) {
 
-//            	currentFile = null;
-                System.out.println("✅ Uploaded: " + currentFile.getPath());
-                pendingUpload.remove(0); // Remove after successful upload
-            } else {
-            	File fileToUpload = new File(currentFile.getPath());
+//				            	currentFile = null;
+				                System.out.println("✅ Uploaded: " + currentFile.getPath());
+				                pendingUpload.remove(0); // Remove after successful upload
+				            } else {
+				            	File fileToUpload = new File(currentFile.getPath());
 
-            	// check for the error if the files exits
-                if (!fileToUpload.exists()) {
-                    System.err.println("⚠️ File not found: " + currentFile.getPath());
-                    boolean deleted = ApiCalls.deleteFile(currentFile.getId());
-                    if(deleted) {
-                    	 pendingUpload.remove(0); // Remove missing file from queue
-                    }
-                    continue; // Skip to the next file
-                }
-                else {
-                System.err.println("❌ Failed to upload: " + currentFile.getPath());
-                break; // Stop on failure to avoid infinite loop
-                }
-                }
-        }
+				            	// check for the error if the files exits
+				                if (!fileToUpload.exists()) {
+				                    System.err.println("⚠️ File not found: " + currentFile.getPath());
+				                    boolean deleted = ApiCalls.deleteFile(currentFile.getId());
+				                    if(deleted) {
+				                    	 pendingUpload.remove(0); // Remove missing file from queue
+				                    }
+				                    continue; // Skip to the next file
+				                }
+				                else {
+				                System.err.println("❌ Failed to upload: " + currentFile.getPath());
+				                break; // Stop on failure to avoid infinite loop
+				                }
+				                }
+				        }
+				        currentFile = null;
+				        System.out.println("📤 Upload complete.");
+					return null;
+				}
+				@Override
+				protected void done() {
+					System.out.println("Upload complete");
+				}
+			}.execute();
 
-        System.out.println("📤 Upload complete.");
+		});
+      
     }
     /**
      * Opens a file picker dialog and uploads the selected file via SFTP.

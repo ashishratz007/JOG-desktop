@@ -66,6 +66,7 @@ public class NasServer implements SftpUploaderListener {
 		livePanel.removeAll();
 		JScrollPane table = createTable(data, "Live");
 		livePanel.setLayout(new BorderLayout());
+		updatePageButtons(1, 1, "live");
 		livePanel.add(table, BorderLayout.CENTER);
 
 		// Force UI update
@@ -321,7 +322,7 @@ public class NasServer implements SftpUploaderListener {
 				if (row % 2 == 0) {
 					c.setBackground(Color.WHITE);
 				} else {
-					c.setBackground(new Color(0x7A8A99));
+					c.setBackground(new Color(0xC4D7E9));
 				}
 				return c;
 			}
