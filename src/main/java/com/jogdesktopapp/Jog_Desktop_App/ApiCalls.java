@@ -218,8 +218,9 @@ public class ApiCalls {
 	// confirm your pending file status
     public static String markComplete(boolean isReprint, String fileId) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/update_status.php";
-        String table_name = isReprint? "reprint" :"redeign";
-        String jsonInputString = "{\"table_name\": \"" + "reprint" + "\", \"rep_id\": \"" + fileId + "\", \"status\": \"" + "1" + "\"}";
+        String table_name = isReprint? "reprint" :"redesign";
+        System.out.println("actions to :  "  + isReprint  +  "=====" + fileId);
+        String jsonInputString = "{\"table_name\": \"" + table_name + "\", \"rep_id\": \"" + fileId + "\", \"status\": \"" + "1" + "\"}";
         
         try {
             URL url = new URL(apiUrl);
@@ -237,7 +238,7 @@ public class ApiCalls {
 
             int responseCode = conn.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-            	System.out.println("Path setup sucess");
+            	System.out.println("action done sucess");
                 return "Success: " + responseCode;
             } else {
             	System.out.println("Path setup Error");

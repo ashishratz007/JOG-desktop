@@ -230,7 +230,7 @@ public class RedesignUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
             data[i][4] = file.synologyPath + "," + file.file_id;
-            data[i][5] = file.file_id; // For Complete action
+            data[i][5] = file.redesignId; // For Complete action
             data[i][6] = file.note != null ? file.note : "";
         }
         
