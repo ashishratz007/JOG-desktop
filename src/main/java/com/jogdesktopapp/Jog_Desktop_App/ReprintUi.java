@@ -527,21 +527,75 @@ public class ReprintUi {
         updatePageButtons(totalPages, currentPage);
     }
     
-    private void updatePageButtons(int totalPages, int currentPage) {
+      private void updatePageButtons(int totalPages, int currentPage) {
         pagesPanel.removeAll();
         
-        for (int i = 1; i <= totalPages; i++) {
+        // Add left arrow button if there are more than 10 pages
+        if (totalPages > 10) {
+            JButton leftArrow = createArrowButton("<", currentPage == 1);
+            leftArrow.addActionListener(e -> {
+                int newPage = Math.max(1, currentPage - 1);
+                System.out.println("⬅️ Left arrow clicked, moving to page " + newPage);
+                handlePageSelection(newPage);
+            });
+            pagesPanel.add(leftArrow);
+        }
+
+        // Calculate page range to display (show 10 pages at a time)
+        int startPage = 1;
+        int endPage = totalPages;
+        
+        if (totalPages > 10) {
+            startPage = Math.max(1, currentPage - 5);
+            endPage = Math.min(totalPages, currentPage + 4);
+            
+            // Adjust if we're near the start or end
+            if (startPage == 1) {
+                endPage = Math.min(10, totalPages);
+            }
+            if (endPage == totalPages) {
+                startPage = Math.max(1, totalPages - 9);
+            }
+        }
+
+        // Add page number buttons
+        for (int i = startPage; i <= endPage; i++) {
             JButton button = createPageButton(i);
             if (i == currentPage) {
                 button.setBackground(Color.BLUE);
             }
             pagesPanel.add(button);
         }
+
+        // Add right arrow button if there are more than 10 pages
+        if (totalPages > 10) {
+            JButton rightArrow = createArrowButton(">", currentPage == totalPages);
+            rightArrow.addActionListener(e -> {
+                int newPage = Math.min(totalPages, currentPage + 1);
+                System.out.println("➡️ Right arrow clicked, moving to page " + newPage);
+                handlePageSelection(newPage);
+            });
+            pagesPanel.add(rightArrow);
+        }
         
         pagesPanel.revalidate();
         pagesPanel.repaint();
     }
     
+    private JButton createArrowButton(String text, boolean isDisabled) {
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(25, 25));
+        button.setContentAreaFilled(false);
+        button.setOpaque(true);
+        button.setBackground(isDisabled ? Color.LIGHT_GRAY : Color.BLUE);
+        button.setForeground(Color.WHITE);
+        button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        button.setFocusPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        button.setEnabled(!isDisabled);
+        return button;
+    }
+     
     private TableCellRenderer getButtonRenderer(String iconPath) {
         return (table, value, isSelected, hasFocus, row, column) -> createIconButton(iconPath);
     }
