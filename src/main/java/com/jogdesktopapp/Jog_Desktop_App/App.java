@@ -4,8 +4,7 @@ import java.awt.*;
 import java.net.Socket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-
-import com.jogdesktopapp.Jog_Desktop_App.models.SystemInfoProvider;
+import com.jogdesktopapp.Jog_Desktop_App.models.WindowsSystemInfo;
 
 import java.net.URI;
 import java.util.Map;
@@ -33,18 +32,17 @@ public class App {
 						protected Void doInBackground() throws Exception {
 							sftpClient.getPendingFiles(); // Runs in background
 							// Get the singleton instance
-					        SystemInfoProvider infoProvider = SystemInfoProvider.getInstance();
+					        WindowsSystemInfo infoProvider = WindowsSystemInfo.getInstance();
 					        
-					        // Get device ID
-					        String deviceId = infoProvider.getDeviceId();
-					        System.out.println("Device ID: " + deviceId);
+					        // Get device ID and name
+					        System.out.println("Device ID: " + infoProvider.getDeviceId());
+					        System.out.println("Device Name: " + infoProvider.getDeviceName());
 					        
 					        // Get all system info
-					        Map<String, String> systemInfo = infoProvider.getSystemInfo();
-					        System.out.println("System Information:");
-					        for (Map.Entry<String, String> entry : systemInfo.entrySet()) {
-					            System.out.println(entry.getKey() + ": " + entry.getValue());
-					        }
+					        System.out.println("\nSystem Information:");
+					        infoProvider.getSystemInfo().forEach((key, value) -> {
+					            System.out.println(key + ": " + value);
+					        });
 							return null;
 						}
 						@Override
