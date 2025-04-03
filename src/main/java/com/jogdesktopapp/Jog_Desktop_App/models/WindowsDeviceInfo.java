@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class WindowsDeviceInfo {
     private static WindowsDeviceInfo instance;
@@ -15,9 +14,9 @@ public class WindowsDeviceInfo {
 
     private WindowsDeviceInfo() {
         this.deviceSpecs = gatherDeviceSpecs();
-        this.deviceId = getExactDeviceId();
-        this.deviceName = getDeviceName();
-        this.productId = getProductId();
+        this.deviceId = getWindowsDeviceId();
+        this.deviceName = getWindowsDeviceName();
+        this.productId = getWindowsProductId();
     }
 
     public static synchronized WindowsDeviceInfo getInstance() {
@@ -43,154 +42,64 @@ public class WindowsDeviceInfo {
         return new HashMap<>(deviceSpecs);
     }
 
-    private String getExactDeviceId() {
-        // Try multiple methods to get the Device ID
-        String[] methods = {
-            getRegistryDeviceId(),       // First try registry
-            getWmiDeviceId(),            // Then try WMI
-            getPowershellDeviceId(),     // Then try PowerShell
-            generateFallbackDeviceId()   // Final fallback
-        };
-
-        // Return the first non-null, non-empty result
-        for (String id : methods) {
-            if (id != null && !id.isEmpty() && !id.startsWith("ERROR")) {
-                return id;
-            }
-        }
-        return "UNKNOWN-DEVICE-ID";
-    }
-
-    private String getRegistryDeviceId() {
+    private String getWindowsDeviceId() {
         try {
-            Process process = Runtime.getRuntime().exec(
-                "reg query HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack /v SettingsDeviceId");
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
-            
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("SettingsDeviceId")) {
-                    String[] parts = line.split("REG_SZ");
-                    if (parts.length > 1) {
-                        return parts[1].trim();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Ignore errors
-        }
-        return null;
-    }
-
-    private String getWmiDeviceId() {
-        try {
-            Process process = Runtime.getRuntime().exec(
-                "wmic csproduct get uuid");
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
-            
-            // Skip the header line
-            reader.readLine();
+            // This gets the exact Device ID shown in Windows Settings
+            Process process = Runtime.getRuntime().exec("powershell -command \"(Get-CimInstance -Class Win32_ComputerSystemProduct).UUID\"");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String id = reader.readLine();
-            return id != null ? id.trim() : null;
+            return id != null ? id.trim() : "UNKNOWN-DEVICE-ID";
         } catch (Exception e) {
-            return null;
+            return "ERROR-GETTING-DEVICE-ID";
         }
     }
 
-    private String getPowershellDeviceId() {
+    private String getWindowsDeviceName() {
         try {
-            Process process = Runtime.getRuntime().exec(
-                "powershell -command \"(Get-CimInstance -Class Win32_ComputerSystemProduct).UUID\"");
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
+            // This gets the exact Device Name shown in Windows Settings
+            String name = System.getenv("COMPUTERNAME");
+            return name != null ? name : "UNKNOWN-DEVICE-NAME";
+        } catch (Exception e) {
+            return "ERROR-GETTING-DEVICE-NAME";
+        }
+    }
+
+    private String getWindowsProductId() {
+        try {
+            // This gets the exact Product ID shown in Windows Settings
+            Process process = Runtime.getRuntime().exec("powershell -command \"(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductId\"");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String id = reader.readLine();
-            return id != null ? id.trim() : null;
+            return id != null ? id.trim() : "UNKNOWN-PRODUCT-ID";
         } catch (Exception e) {
-            return null;
+            return "ERROR-GETTING-PRODUCT-ID";
         }
-    }
-
-    private String generateFallbackDeviceId() {
-        try {
-            String computerName = System.getenv("COMPUTERNAME");
-            String volumeSerial = getVolumeSerial();
-            return "GEN-" + 
-                   (computerName != null ? computerName.hashCode() : "") + "-" +
-                   (volumeSerial != null ? volumeSerial.hashCode() : "") + "-" +
-                   UUID.randomUUID().toString().substring(0, 8);
-        } catch (Exception e) {
-            return "ERR-" + UUID.randomUUID().toString().substring(0, 8);
-        }
-    }
-
-    private String getVolumeSerial() {
-        try {
-            Process process = Runtime.getRuntime().exec("cmd /c vol c:");
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("Volume Serial Number is")) {
-                    return line.split("is")[1].trim();
-                }
-            }
-        } catch (Exception e) {
-            // Ignore errors
-        }
-        return null;
-    }
-
-    private String getDeviceName1() {
-        String name = System.getenv("COMPUTERNAME");
-        return name != null ? name : "UNKNOWN-DEVICE-NAME";
-    }
-
-    private String getProductId1() {
-        try {
-            Process process = Runtime.getRuntime().exec(
-                "reg query HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion /v ProductId");
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
-            
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("ProductId")) {
-                    String[] parts = line.split("REG_SZ");
-                    if (parts.length > 1) {
-                        return parts[1].trim();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Ignore errors
-        }
-        return "UNKNOWN-PRODUCT-ID";
     }
 
     private Map<String, String> gatherDeviceSpecs() {
         Map<String, String> specs = new HashMap<>();
         
-        // Basic system info
+        // Basic Windows identification
         specs.put("computer.name", System.getenv("COMPUTERNAME"));
         specs.put("user.name", System.getProperty("user.name"));
         
-        // Hardware specs
+        // Hardware specifications
         specs.put("cpu", execWMIC("cpu get name"));
         specs.put("cpu.cores", execWMIC("cpu get NumberOfCores"));
         specs.put("cpu.threads", execWMIC("cpu get NumberOfLogicalProcessors"));
         specs.put("memory.total", formatBytes(execWMIC("computersystem get TotalPhysicalMemory")));
         specs.put("gpu", execWMIC("path win32_VideoController get name"));
+        
+        // Disk information
         specs.put("disk.model", execWMIC("diskdrive get model"));
         specs.put("disk.size", formatBytes(execWMIC("diskdrive get size")));
         
-        // System info
+        // System information
+        specs.put("bios.version", execWMIC("bios get version"));
+        specs.put("bios.manufacturer", execWMIC("bios get manufacturer"));
         specs.put("os.name", execWMIC("os get caption"));
         specs.put("os.version", execWMIC("os get version"));
         specs.put("os.architecture", execWMIC("os get osarchitecture"));
-        specs.put("bios.version", execWMIC("bios get version"));
-        specs.put("bios.manufacturer", execWMIC("bios get manufacturer"));
         
         return specs;
     }
@@ -208,16 +117,21 @@ public class WindowsDeviceInfo {
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (!line.isEmpty()) {
-                    if (!firstLine) output.append("\n");
+                    if (!firstLine) {
+                        output.append("\n");
+                    }
                     output.append(line);
                     firstLine = false;
                 }
             }
             
+            // Clean up the output
             String result = output.toString();
             if (result.contains("\n")) {
                 String[] parts = result.split("\n");
-                if (parts.length > 1) return parts[1].trim();
+                if (parts.length > 1) {
+                    return parts[1].trim();
+                }
             }
             return result.isEmpty() ? null : result;
         } catch (Exception e) {
@@ -231,9 +145,10 @@ public class WindowsDeviceInfo {
             long size = Long.parseLong(bytes.trim());
             if (size == 0) return "0 Bytes";
             
-            String[] units = {"Bytes", "KB", "MB", "GB", "TB"};
+            String[] units = new String[]{"Bytes", "KB", "MB", "GB", "TB"};
             int digitGroups = (int) (Math.log10(size)/Math.log10(1024));
-            return String.format("%,.1f %s", size/Math.pow(1024, digitGroups), units[digitGroups]);
+            return String.format("%,.1f %s", size/Math.pow(1024, digitGroups), 
+                               units[digitGroups]);
         } catch (NumberFormatException e) {
             return bytes + " Bytes";
         }
