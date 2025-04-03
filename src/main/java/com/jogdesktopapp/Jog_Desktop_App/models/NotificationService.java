@@ -9,7 +9,7 @@ import javax.sound.sampled.*;
 public class NotificationService {
 
     private static final String[] SOUND_FILES = {
-            "src/main/resources/sounds/1.wav",
+//            "src/main/resources/sounds/1.wav",
             "src/main/resources/sounds/2.wav",
     };
 

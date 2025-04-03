@@ -182,7 +182,7 @@ public class AppFrame extends JFrame {
         tab.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                setSelectedTab(index); 
+                setSelectedTab(index);
                 reprintCount = GlobalDataClass.getInstance().reprintPendingData.totalCount;
                 redesignCount = GlobalDataClass.getInstance().redesignPendingData.totalCount;
                 updateBadges();
