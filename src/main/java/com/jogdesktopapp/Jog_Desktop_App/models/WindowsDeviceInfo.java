@@ -4,19 +4,20 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class WindowsDeviceInfo {
     private static WindowsDeviceInfo instance;
-    private final String settingsDeviceId;  // Exact ID shown in Windows Settings
+    private final String deviceId;
     private final String deviceName;
     private final String productId;
     private final Map<String, String> deviceSpecs;
 
     private WindowsDeviceInfo() {
         this.deviceSpecs = gatherDeviceSpecs();
-        this.settingsDeviceId = getSettingsDeviceId();
-        this.deviceName = System.getenv("COMPUTERNAME");
-        this.productId = getRegistryProductId();
+        this.deviceId = getExactDeviceId();
+        this.deviceName = getDeviceName();
+        this.productId = getProductId();
     }
 
     public static synchronized WindowsDeviceInfo getInstance() {
@@ -27,7 +28,7 @@ public class WindowsDeviceInfo {
     }
 
     public String getDeviceId() {
-        return settingsDeviceId;
+        return deviceId;
     }
 
     public String getDeviceName() {
@@ -42,34 +43,130 @@ public class WindowsDeviceInfo {
         return new HashMap<>(deviceSpecs);
     }
 
-    private String getSettingsDeviceId() {
+    private String getExactDeviceId() {
+        // Try multiple methods to get the Device ID
+        String[] methods = {
+            getRegistryDeviceId(),       // First try registry
+            getWmiDeviceId(),            // Then try WMI
+            getPowershellDeviceId(),     // Then try PowerShell
+            generateFallbackDeviceId()   // Final fallback
+        };
+
+        // Return the first non-null, non-empty result
+        for (String id : methods) {
+            if (id != null && !id.isEmpty() && !id.startsWith("ERROR")) {
+                return id;
+            }
+        }
+        return "UNKNOWN-DEVICE-ID";
+    }
+
+    private String getRegistryDeviceId() {
         try {
-            // This PowerShell command gets the exact Device ID shown in Settings > System > About
             Process process = Runtime.getRuntime().exec(
-                "powershell -command \"Get-ItemPropertyValue -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack' -Name 'SettingsDeviceId'\"");
-            
+                "reg query HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack /v SettingsDeviceId");
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()));
-            String id = reader.readLine();
-            return id != null ? id.trim() : "UNKNOWN-DEVICE-ID";
+            
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains("SettingsDeviceId")) {
+                    String[] parts = line.split("REG_SZ");
+                    if (parts.length > 1) {
+                        return parts[1].trim();
+                    }
+                }
+            }
         } catch (Exception e) {
-            return "ERROR-GETTING-DEVICE-ID";
+            // Ignore errors
+        }
+        return null;
+    }
+
+    private String getWmiDeviceId() {
+        try {
+            Process process = Runtime.getRuntime().exec(
+                "wmic csproduct get uuid");
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()));
+            
+            // Skip the header line
+            reader.readLine();
+            String id = reader.readLine();
+            return id != null ? id.trim() : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
-    private String getRegistryProductId() {
+    private String getPowershellDeviceId() {
         try {
-            // Gets the exact Product ID shown in Windows Settings
             Process process = Runtime.getRuntime().exec(
-                "powershell -command \"(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductId\"");
-            
+                "powershell -command \"(Get-CimInstance -Class Win32_ComputerSystemProduct).UUID\"");
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()));
             String id = reader.readLine();
-            return id != null ? id.trim() : "UNKNOWN-PRODUCT-ID";
+            return id != null ? id.trim() : null;
         } catch (Exception e) {
-            return "ERROR-GETTING-PRODUCT-ID";
+            return null;
         }
+    }
+
+    private String generateFallbackDeviceId() {
+        try {
+            String computerName = System.getenv("COMPUTERNAME");
+            String volumeSerial = getVolumeSerial();
+            return "GEN-" + 
+                   (computerName != null ? computerName.hashCode() : "") + "-" +
+                   (volumeSerial != null ? volumeSerial.hashCode() : "") + "-" +
+                   UUID.randomUUID().toString().substring(0, 8);
+        } catch (Exception e) {
+            return "ERR-" + UUID.randomUUID().toString().substring(0, 8);
+        }
+    }
+
+    private String getVolumeSerial() {
+        try {
+            Process process = Runtime.getRuntime().exec("cmd /c vol c:");
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains("Volume Serial Number is")) {
+                    return line.split("is")[1].trim();
+                }
+            }
+        } catch (Exception e) {
+            // Ignore errors
+        }
+        return null;
+    }
+
+    private String getDeviceName1() {
+        String name = System.getenv("COMPUTERNAME");
+        return name != null ? name : "UNKNOWN-DEVICE-NAME";
+    }
+
+    private String getProductId1() {
+        try {
+            Process process = Runtime.getRuntime().exec(
+                "reg query HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion /v ProductId");
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()));
+            
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains("ProductId")) {
+                    String[] parts = line.split("REG_SZ");
+                    if (parts.length > 1) {
+                        return parts[1].trim();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore errors
+        }
+        return "UNKNOWN-PRODUCT-ID";
     }
 
     private Map<String, String> gatherDeviceSpecs() {
@@ -79,7 +176,7 @@ public class WindowsDeviceInfo {
         specs.put("computer.name", System.getenv("COMPUTERNAME"));
         specs.put("user.name", System.getProperty("user.name"));
         
-        // Hardware specs via WMIC
+        // Hardware specs
         specs.put("cpu", execWMIC("cpu get name"));
         specs.put("cpu.cores", execWMIC("cpu get NumberOfCores"));
         specs.put("cpu.threads", execWMIC("cpu get NumberOfLogicalProcessors"));
