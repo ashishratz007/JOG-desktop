@@ -34,6 +34,11 @@ public class ReprintUi {
     private JSpinner startDateSpinner;
     private JSpinner endDateSpinner;
     
+    // Icons
+    private final ImageIcon downloadIcon = createImageIcon("/icons/download.png");
+    private final ImageIcon completeIcon = createImageIcon("/icons/complete.png");
+    private final ImageIcon noteIcon = createImageIcon("/icons/note.png");
+    
     // Pagination Constants
     private static final int ITEMS_PER_PAGE = 10;
     private int currentPendingPage = 1;
@@ -45,6 +50,16 @@ public class ReprintUi {
         completePanel = createCompleteTablePanel(new Object[0][6]);
         initializeUI();
         refreshData();
+    }
+    
+    private ImageIcon createImageIcon(String path) {
+        java.net.URL imgURL = getClass().getResource(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL);
+        } else {
+            System.err.println("Couldn't find icon file: " + path);
+            return new ImageIcon(); // Return empty icon if not found
+        }
     }
     
     private void initializeUI() {
@@ -154,11 +169,9 @@ public class ReprintUi {
     private void tabbedPaneChanged() {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
-            // When switching to Pending tab
             displayPendingPage(currentPendingPage);
             updatePageButtons(pending.pageCount(), currentPendingPage);
         } else {
-            // When switching to Complete tab
             displayCompletePage(currentCompletePage);
             updatePageButtons(complete.pageCount(), currentCompletePage);
         }
@@ -361,7 +374,7 @@ public class ReprintUi {
     }
     
     private void configureDownloadColumn(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer(downloadIcon));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -380,11 +393,11 @@ public class ReprintUi {
                     }
                 }.execute();
             }
-        }, "src/main/resources/icons/download.png"));
+        }, downloadIcon));
     }
     
     private void configureCompleteColumn(JTable table) {
-        table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("src/main/resources/icons/complete.png"));
+        table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer(completeIcon));
         table.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -413,11 +426,11 @@ public class ReprintUi {
                     }.execute();
                 }
             }
-        }, "src/main/resources/icons/complete.png"));
+        }, completeIcon));
     }
     
     private void configureNoteColumn(JTable table) {
-        table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
+        table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer(noteIcon));
         table.getColumnModel().getColumn(7).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -431,11 +444,11 @@ public class ReprintUi {
                     );
                 }
             }
-        }, "src/main/resources/icons/note.png"));
+        }, noteIcon));
     }
     
     private void configureNoteColumnForComplete(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer(noteIcon));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -449,7 +462,7 @@ public class ReprintUi {
                     );
                 }
             }
-        }, "src/main/resources/icons/note.png"));
+        }, noteIcon));
     }
 
     private JButton createPageButton(int pageNumber) {
@@ -627,12 +640,12 @@ public class ReprintUi {
         return button;
     }
      
-    private TableCellRenderer getButtonRenderer(String iconPath) {
-        return (table, value, isSelected, hasFocus, row, column) -> createIconButton(iconPath);
+    private TableCellRenderer getButtonRenderer(ImageIcon icon) {
+        return (table, value, isSelected, hasFocus, row, column) -> createIconButton(icon);
     }
     
-    private JButton createIconButton(String iconPath) {
-        JButton button = new JButton(new ImageIcon(iconPath));
+    private JButton createIconButton(ImageIcon icon) {
+        JButton button = new JButton(icon);
         button.setOpaque(false);
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
@@ -765,14 +778,14 @@ class ButtonEditor extends DefaultCellEditor {
     private final JButton button;
     private String value;
     
-    public ButtonEditor(Action action, String iconPath) {
+    public ButtonEditor(Action action, ImageIcon icon) {
         super(new JCheckBox());
         this.button = new JButton();
         button.setOpaque(false);
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
-        button.setIcon(new ImageIcon(iconPath));
+        button.setIcon(icon);
         button.addActionListener(action);
     }
     

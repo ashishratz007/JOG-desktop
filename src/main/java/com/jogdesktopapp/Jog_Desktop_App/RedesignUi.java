@@ -34,6 +34,11 @@ public class RedesignUi {
     private JSpinner startDateSpinner;
     private JSpinner endDateSpinner;
     
+    // Icons
+    private final ImageIcon downloadIcon = createImageIcon("/icons/download.png");
+    private final ImageIcon completeIcon = createImageIcon("/icons/complete.png");
+    private final ImageIcon noteIcon = createImageIcon("/icons/note.png");
+    
     // Pagination Constants
     private static final int ITEMS_PER_PAGE = 10;
     private int currentPendingPage = 1;
@@ -41,10 +46,20 @@ public class RedesignUi {
     int maxWidth = 100;
     
     public RedesignUi() {
-        pendingPanel = createPendingTablePanel(new Object[0][7]); // Changed to 7 columns (added Complete column)
+        pendingPanel = createPendingTablePanel(new Object[0][7]);
         completePanel = createCompleteTablePanel(new Object[0][5]);
         initializeUI();
         refreshData();
+    }
+    
+    private ImageIcon createImageIcon(String path) {
+        java.net.URL imgURL = getClass().getResource(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL);
+        } else {
+            System.err.println("Couldn't find icon file: " + path);
+            return new ImageIcon(); // Return empty icon if not found
+        }
     }
     
     private void initializeUI() {
@@ -154,11 +169,9 @@ public class RedesignUi {
     private void tabbedPaneChanged() {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
-            // When switching to Pending tab
             displayPendingPage(currentPendingPage);
             updatePageButtons(pending.pageCount(), currentPendingPage);
         } else {
-            // When switching to Complete tab
             displayCompletePage(currentCompletePage);
             updatePageButtons(complete.pageCount(), currentCompletePage);
         }
@@ -221,7 +234,7 @@ public class RedesignUi {
         }
         
         List<RedesignItem> pageItems = pending.data;
-        Object[][] data = new Object[pageItems.size()][7]; // Changed to 7 columns
+        Object[][] data = new Object[pageItems.size()][7];
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
@@ -230,7 +243,7 @@ public class RedesignUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
             data[i][4] = file.synologyPath + "," + file.file_id;
-            data[i][5] = file.redesignId; // For Complete action
+            data[i][5] = file.redesignId;
             data[i][6] = file.note != null ? file.note : "";
         }
         
@@ -297,7 +310,7 @@ public class RedesignUi {
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4 || column == 5 || column == 6; // Download, Complete, and Note columns are editable
+                return column == 4 || column == 5 || column == 6;
             }
         };
         
@@ -316,11 +329,11 @@ public class RedesignUi {
         table.setGridColor(Color.DARK_GRAY);
         
         // Set fixed column widths
-        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Complete
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
         
         configureDownloadColumn(table);
@@ -336,7 +349,7 @@ public class RedesignUi {
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only Note column is editable
+                return column == 4;
             }
         };
         
@@ -354,7 +367,6 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        // Set fixed column width for Note column
         table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
         
@@ -364,7 +376,7 @@ public class RedesignUi {
     }
     
     private void configureDownloadColumn(JTable table) {
-        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
+        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer(downloadIcon));
         table.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -391,11 +403,11 @@ public class RedesignUi {
                     System.err.println("Invalid action command format. Expected 'path,id'");
                 }
             }
-        }, "src/main/resources/icons/download.png"));
+        }, downloadIcon));
     }
     
     private void configureCompleteColumn(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/complete.png"));
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer(completeIcon));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -425,12 +437,12 @@ public class RedesignUi {
                     }.execute();
                 }
             }
-        }, "src/main/resources/icons/complete.png"));
+        }, completeIcon));
     }
     
     private void configureNoteColumn(JTable table) {
-        int noteColumn = table.getColumnCount() - 1; // Note is always last column
-        table.getColumnModel().getColumn(noteColumn).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
+        int noteColumn = table.getColumnCount() - 1;
+        table.getColumnModel().getColumn(noteColumn).setCellRenderer(getButtonRenderer(noteIcon));
         table.getColumnModel().getColumn(noteColumn).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -444,7 +456,7 @@ public class RedesignUi {
                     );
                 }
             }
-        }, "src/main/resources/icons/note.png"));
+        }, noteIcon));
     }
     
     private JButton createPageButton(int pageNumber) {
@@ -558,7 +570,6 @@ public class RedesignUi {
     private void updatePageButtons(int totalPages, int currentPage) {
         pagesPanel.removeAll();
         
-        // Add left arrow button if there are more than 10 pages
         if (totalPages > 10) {
             JButton leftArrow = createArrowButton("<", currentPage == 1);
             leftArrow.addActionListener(e -> {
@@ -568,7 +579,6 @@ public class RedesignUi {
             pagesPanel.add(leftArrow);
         }
 
-        // Calculate page range to display (show 10 pages at a time)
         int startPage = 1;
         int endPage = totalPages;
         
@@ -576,7 +586,6 @@ public class RedesignUi {
             startPage = Math.max(1, currentPage - 5);
             endPage = Math.min(totalPages, currentPage + 4);
             
-            // Adjust if we're near the start or end
             if (startPage == 1) {
                 endPage = Math.min(10, totalPages);
             }
@@ -585,7 +594,6 @@ public class RedesignUi {
             }
         }
 
-        // Add page number buttons
         for (int i = startPage; i <= endPage; i++) {
             JButton button = createPageButton(i);
             if (i == currentPage) {
@@ -594,7 +602,6 @@ public class RedesignUi {
             pagesPanel.add(button);
         }
 
-        // Add right arrow button if there are more than 10 pages
         if (totalPages > 10) {
             JButton rightArrow = createArrowButton(">", currentPage == totalPages);
             rightArrow.addActionListener(e -> {
@@ -622,12 +629,12 @@ public class RedesignUi {
         return button;
     }
     
-    private TableCellRenderer getButtonRenderer(String iconPath) {
-        return (table, value, isSelected, hasFocus, row, column) -> createIconButton(iconPath);
+    private TableCellRenderer getButtonRenderer(ImageIcon icon) {
+        return (table, value, isSelected, hasFocus, row, column) -> createIconButton(icon);
     }
     
-    private JButton createIconButton(String iconPath) {
-        JButton button = new JButton(new ImageIcon(iconPath));
+    private JButton createIconButton(ImageIcon icon) {
+        JButton button = new JButton(icon);
         button.setOpaque(false);
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
@@ -663,12 +670,11 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        // Set fixed column widths
-        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Complete
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
         
         configureDownloadColumn(table);
@@ -706,7 +712,6 @@ public class RedesignUi {
         table.setRowHeight(30);
         table.setGridColor(Color.DARK_GRAY);
         
-        // Set fixed column width for Note column
         table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth);
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
         
