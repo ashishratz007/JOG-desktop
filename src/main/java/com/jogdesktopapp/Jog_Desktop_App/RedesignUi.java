@@ -364,7 +364,7 @@ public class RedesignUi {
     }
     
     private void configureDownloadColumn(JTable table) {
-        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer("icons/download.png"));
+        table.getColumnModel().getColumn(4).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
         table.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -391,11 +391,11 @@ public class RedesignUi {
                     System.err.println("Invalid action command format. Expected 'path,id'");
                 }
             }
-        }, "icons/download.png"));
+        }, "src/main/resources/icons/download.png"));
     }
     
     private void configureCompleteColumn(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("icons/complete.png"));
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/complete.png"));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -425,12 +425,12 @@ public class RedesignUi {
                     }.execute();
                 }
             }
-        }, "icons/complete.png"));
+        }, "src/main/resources/icons/complete.png"));
     }
     
     private void configureNoteColumn(JTable table) {
         int noteColumn = table.getColumnCount() - 1; // Note is always last column
-        table.getColumnModel().getColumn(noteColumn).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(noteColumn).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
         table.getColumnModel().getColumn(noteColumn).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -444,7 +444,7 @@ public class RedesignUi {
                     );
                 }
             }
-        }, "icons/note.png"));
+        }, "src/main/resources/icons/note.png"));
     }
     
     private JButton createPageButton(int pageNumber) {

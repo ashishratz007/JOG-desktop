@@ -75,7 +75,7 @@ public class AppFrame extends JFrame {
         appbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
 
         // Logo
-        ImageIcon logoIcon = new ImageIcon("icons/logo.png");
+        ImageIcon logoIcon = new ImageIcon("src/main/resources/icons/logo.png");
         Image logoImage = logoIcon.getImage().getScaledInstance(150, 50, Image.SCALE_SMOOTH);
         JLabel logoLabel = new JLabel(new ImageIcon(logoImage));
         logoLabel.setPreferredSize(new Dimension(150, 50));

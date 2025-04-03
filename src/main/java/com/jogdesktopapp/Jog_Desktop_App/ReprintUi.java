@@ -361,7 +361,7 @@ public class ReprintUi {
     }
     
     private void configureDownloadColumn(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("icons/download.png"));
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -380,11 +380,11 @@ public class ReprintUi {
                     }
                 }.execute();
             }
-        }, "icons/download.png"));
+        }, "src/main/resources/icons/download.png"));
     }
     
     private void configureCompleteColumn(JTable table) {
-        table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("icons/complete.png"));
+        table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("src/main/resources/icons/complete.png"));
         table.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -413,11 +413,11 @@ public class ReprintUi {
                     }.execute();
                 }
             }
-        }, "icons/complete.png"));
+        }, "src/main/resources/icons/complete.png"));
     }
     
     private void configureNoteColumn(JTable table) {
-        table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
         table.getColumnModel().getColumn(7).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -431,11 +431,11 @@ public class ReprintUi {
                     );
                 }
             }
-        }, "icons/note.png"));
+        }, "src/main/resources/icons/note.png"));
     }
     
     private void configureNoteColumnForComplete(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("icons/note.png"));
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -449,7 +449,7 @@ public class ReprintUi {
                     );
                 }
             }
-        }, "icons/note.png"));
+        }, "src/main/resources/icons/note.png"));
     }
 
     private JButton createPageButton(int pageNumber) {
