@@ -5,7 +5,10 @@ import java.net.Socket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
+import com.jogdesktopapp.Jog_Desktop_App.models.SystemInfoProvider;
+
 import java.net.URI;
+import java.util.Map;
 
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -29,6 +32,19 @@ public class App {
 						@Override
 						protected Void doInBackground() throws Exception {
 							sftpClient.getPendingFiles(); // Runs in background
+							// Get the singleton instance
+					        SystemInfoProvider infoProvider = SystemInfoProvider.getInstance();
+					        
+					        // Get device ID
+					        String deviceId = infoProvider.getDeviceId();
+					        System.out.println("Device ID: " + deviceId);
+					        
+					        // Get all system info
+					        Map<String, String> systemInfo = infoProvider.getSystemInfo();
+					        System.out.println("System Information:");
+					        for (Map.Entry<String, String> entry : systemInfo.entrySet()) {
+					            System.out.println(entry.getKey() + ": " + entry.getValue());
+					        }
 							return null;
 						}
 						@Override
