@@ -6,12 +6,6 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import com.jogdesktopapp.Jog_Desktop_App.models.WindowsDeviceInfo;
-import com.jogdesktopapp.Jog_Desktop_App.models.WindowsSystemInfo;
-
-import java.net.URI;
-import java.util.Map;
-
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 public class App {
