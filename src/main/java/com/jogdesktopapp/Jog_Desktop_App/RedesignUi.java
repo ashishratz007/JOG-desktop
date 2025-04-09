@@ -225,11 +225,17 @@ public class RedesignUi {
         
         for (int i = 0; i < pageItems.size(); i++) {
             RedesignItem file = pageItems.get(i);
+            
+            String dateStr = formatDate(file.created_on);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
+            dateTime = dateTime.plusHours(7);
+            
             data[i][0] = file.fileName;
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
-            data[i][4] = file.synologyPath + "," + file.file_id;
+            data[i][4] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getDayOfMonth()+ "," + dateTime.getDayOfMonth();
             data[i][5] = file.redesignId; // For Complete action
             data[i][6] = file.note != null ? file.note : "";
         }
@@ -378,7 +384,7 @@ public class RedesignUi {
                     new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() throws Exception {
-                            App.sftpClient.pickAndDownloadFile(fileId, filePath);
+                        	App.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4]);
                             return null;
                         }
                         

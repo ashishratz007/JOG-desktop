@@ -284,24 +284,29 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
     /**
      * Downloads a file from the SFTP server.
      */
-    public void pickAndDownloadFile(String fileId,   String downloadPath) {
-    	
-        downloadFile(fileId, downloadPath,true); 
+    public void pickAndDownloadFile(String fileId,   String downloadPath, boolean isDesign ,String exCode, String year, String month) {
+        downloadFile(fileId, downloadPath,isDesign, exCode, year, month); 
         
     }
     
-public void downloadFile(String fileId, String downloadPath,boolean isDesign) {
+public void downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month) {
     notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");
     String fileName = dataSplit[dataSplit.length - 1];
-    String pickedPath = selectDownloadFolder();
-    String localFilePath = pickedPath + "\\" + fileName;
+//    String pickedPath = selectDownloadFolder();
+//    String localFilePath = pickedPath + "\\" + fileName;
 
     Session session = null;
     ChannelSftp channel = null;
  // Ensure directory exists
-    String storePath = "C:\\Users\\JOG-Graphic\\Desktop\\JOG India Workspace\\download\\2025\\2026";
+    String storePath = "C:\\Users\\JOG-Graphic\\Desktop\\JOG India Workspace\\download";
+    if(isDesign) {
+    	storePath = storePath + "//redesign";
+    }
+    else {
+    	storePath = storePath + "//reprint";
+    }
     File directory = new File(storePath);
     if (!directory.exists()) {
         boolean created = directory.mkdirs();
@@ -311,7 +316,9 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign) {
             return;
         }
     }
+    
     try {
+    	String localFilePath = storePath + "\\" + fileName;
         JSch jsch = new JSch();
         session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
         session.setPassword(PASSWORD);
