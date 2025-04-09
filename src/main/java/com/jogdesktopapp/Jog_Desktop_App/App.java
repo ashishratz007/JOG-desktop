@@ -23,8 +23,9 @@ public class App {
 	static SftpUploader sftpClient = SftpUploader.getInstance(); // actions client for upload download and many more
 	// to make work easier to filter you data
 	static GlobalDataClass globalData = GlobalDataClass.getInstance();
+	// to execute the download files for the user.
+	static PendingDataModel downloadFiles = PendingDataModel.getInstance();
 	public static void main(String[] args) {
-//		PermissionRequest.main(args);
 		EventQueue.invokeLater(() -> {
 			try {  
 //                synologyServer.init(); // Now it won't be null

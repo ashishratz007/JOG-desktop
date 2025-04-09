@@ -286,11 +286,11 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
      */
     public void pickAndDownloadFile(String fileId,   String downloadPath) {
     	
-        downloadFile(fileId, downloadPath); 
+        downloadFile(fileId, downloadPath,true); 
         
     }
     
-public void downloadFile(String fileId, String downloadPath) {
+public void downloadFile(String fileId, String downloadPath,boolean isDesign) {
     notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");
@@ -300,7 +300,17 @@ public void downloadFile(String fileId, String downloadPath) {
 
     Session session = null;
     ChannelSftp channel = null;
-
+ // Ensure directory exists
+    String storePath = "C:\\Users\\JOG-Graphic\\Desktop\\JOG India Workspace\\download\\2025\\2026";
+    File directory = new File(storePath);
+    if (!directory.exists()) {
+        boolean created = directory.mkdirs();
+        if (!created) {
+            System.err.println("❌ Failed to create directories for path: " + storePath);
+            notifyStatusChange(SftpUploaderStatus.IDLE);
+            return;
+        }
+    }
     try {
         JSch jsch = new JSch();
         session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
