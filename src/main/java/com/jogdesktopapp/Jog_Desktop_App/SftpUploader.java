@@ -284,12 +284,12 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
     /**
      * Downloads a file from the SFTP server.
      */
-    public void pickAndDownloadFile(String fileId,   String downloadPath, boolean isDesign ,String exCode, String year, String month) {
-        downloadFile(fileId, downloadPath,isDesign, exCode, year, month); 
+    public void pickAndDownloadFile(String fileId,   String downloadPath, boolean isDesign ,String exCode, String year, String month, String day) {
+        downloadFile(fileId, downloadPath,isDesign, exCode, year, month, day); 
         
     }
     
-public void downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month) {
+public void downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month,String day) {
     notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");

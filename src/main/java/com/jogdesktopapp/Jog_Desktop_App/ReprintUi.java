@@ -234,7 +234,7 @@ public class ReprintUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
             data[i][4] = file.printerName;
-            data[i][5] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getDayOfMonth()+ "," + dateTime.getDayOfMonth();
+            data[i][5] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
             data[i][6] = file.reprintId;
             data[i][7] = file.note != null ? file.note : "";
         }
@@ -369,13 +369,19 @@ public class ReprintUi {
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String[] parts = e.getActionCommand().split(",(?=[^,]+$)");
+                String[] parts = e.getActionCommand().split(",");
                 String filePath = parts[0];
                 String fileId = parts[1];
+                System.err.println("Part 1:  " + parts[0]);
+                System.err.println("Part 2:  " + parts[1]);
+                System.err.println("Part 3:  " + parts[2]);
+                System.err.println("Part 4:  " + parts[3]);
+                System.err.println("Part 5:  " + parts[4]);
+                System.err.println("Part 6:  " + parts[5]);
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() throws Exception {
-                        App.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4]);
+                        App.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
                         return null;
                     }
                     @Override

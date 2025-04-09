@@ -235,7 +235,7 @@ public class RedesignUi {
             data[i][1] = file.designerName;
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.created_on);
-            data[i][4] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getDayOfMonth()+ "," + dateTime.getDayOfMonth();
+            data[i][4] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
             data[i][5] = file.redesignId; // For Complete action
             data[i][6] = file.note != null ? file.note : "";
         }
@@ -375,7 +375,7 @@ public class RedesignUi {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String actionCommand = e.getActionCommand();
-                String[] parts = actionCommand.split(",(?=[^,]+$)");
+                String[] parts = actionCommand.split(",");
                 
                 if (parts.length == 2) {
                     String filePath = parts[0].trim();
@@ -384,7 +384,7 @@ public class RedesignUi {
                     new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() throws Exception {
-                        	App.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4]);
+                        	App.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
                             return null;
                         }
                         
