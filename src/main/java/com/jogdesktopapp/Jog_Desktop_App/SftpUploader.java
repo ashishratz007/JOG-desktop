@@ -307,6 +307,8 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign ,St
     else {
     	storePath = storePath + "//reprint";
     }
+    storePath =  storePath + "//" + year + "//" + month + "//" + day + "//" + exCode;
+    
     File directory = new File(storePath);
     if (!directory.exists()) {
         boolean created = directory.mkdirs();
