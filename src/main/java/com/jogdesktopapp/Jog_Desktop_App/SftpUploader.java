@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -294,6 +295,10 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign ,St
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");
     String fileName = dataSplit[dataSplit.length - 1];
+    List<String> months = Arrays.asList(
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        );
 //    String pickedPath = selectDownloadFolder();
 //    String localFilePath = pickedPath + "\\" + fileName;
 
@@ -304,10 +309,10 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign ,St
     if(isDesign) {
     	storePath = storePath + "//redesign";
     }
-    else {
+    else { 
     	storePath = storePath + "//reprint";
     }
-    storePath =  storePath + "//" + year + "//" + month + "//" + day + "//" + exCode;
+    storePath =  storePath + "//" + year + "//" + months.get(Integer.parseInt(month) - 1) + "//" + day + "//" + exCode;
     
     File directory = new File(storePath);
     if (!directory.exists()) {
