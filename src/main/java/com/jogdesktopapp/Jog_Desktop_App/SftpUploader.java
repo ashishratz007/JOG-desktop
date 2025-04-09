@@ -319,6 +319,7 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign ,St
     
     try {
     	String localFilePath = storePath + "\\" + fileName;
+    	 System.err.println("Path: " + localFilePath);
         JSch jsch = new JSch();
         session = jsch.getSession(USERNAME, SFTP_HOST, SFTP_PORT);
         session.setPassword(PASSWORD);
