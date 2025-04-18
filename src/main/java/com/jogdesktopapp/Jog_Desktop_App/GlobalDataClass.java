@@ -55,7 +55,7 @@ public class GlobalDataClass {
     	sftpClient = SftpUploader.getInstance();
     	socketModel = SocketModel.getInstance();
     	socketModel.connectSocket();
-//    	pendingAndReprint();
+    	pendingAndReprint();
     }
     
     void pendingAndReprint(){
