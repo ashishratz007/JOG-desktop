@@ -168,8 +168,8 @@ class NASServerInfo implements SftpUploaderListener {
 	}
 	
     public JPanel view() {
-    	App.sftpClient.addStatusListener(this);
-    	setStatusPanel(App.sftpClient.currentStatus);
+    	App.globalData.sftpClient.addStatusListener(this);
+    	setStatusPanel(App.globalData.sftpClient.currentStatus);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBackground(AppColors.BACKGROUND_GREY);
@@ -182,7 +182,7 @@ class NASServerInfo implements SftpUploaderListener {
         ipPanel.setBackground(Color.WHITE);
         ipPanel.setBorder(BorderFactory.createLineBorder(AppColors.BlueBorder, 1)); // Border
 
-        JLabel ipLabel = new JLabel("IP: "+ App.sftpClient.SFTP_HOST , SwingConstants.CENTER);
+        JLabel ipLabel = new JLabel("IP: "+ App.globalData.sftpClient.SFTP_HOST , SwingConstants.CENTER);
         ipLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         ipLabel.setForeground(AppColors.BlueText); // Apply custom color
 

@@ -27,12 +27,18 @@ public class SocketModel extends WebSocketClient {
         if (instance == null || instance.isClosed()) {
             try {
                 instance = new SocketModel(new URI(SERVER_URL));
-                instance.connect();
-            } catch (Exception e) {
+                instance.connectSocket();
+            } catch (Exception e) { 
                 e.printStackTrace();
             }
         }
         return instance;
+    }
+    
+    void connectSocket(){
+    	if(!this.connected) {
+            instance.connect();
+    	}
     }
 
     @Override
@@ -41,6 +47,15 @@ public class SocketModel extends WebSocketClient {
         boolean oldValue = this.connected;
         this.connected = true;
         propertyChangeSupport.firePropertyChange("connected", oldValue, this.connected);
+        GlobalDataClass global = GlobalDataClass.getInstance();
+    	String token = global.getToken();
+    	// Create JSON object with the token
+        JSONObject jsonData = new JSONObject();
+        String message = "{\"session_token\": \"" + token + "\"}";
+        jsonData.put("session_token", token);
+        System.out.println("Message  : " + message);
+        instance.send(message);
+        System.out.println("TOKEN is  : " + token);
     }
 
     @Override
@@ -48,6 +63,8 @@ public class SocketModel extends WebSocketClient {
         System.out.println("📩 Received: " + message);
         SwingUtilities.invokeLater(() -> handleAction(message));
     }
+    
+    
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
@@ -111,7 +128,7 @@ public class SocketModel extends WebSocketClient {
                         pendingFiles.add(fileData);
                         System.out.println("📤 adding file");
                     }
-                    App.sftpClient.addFiles(pendingFiles); 
+                    App.globalData.sftpClient.addFiles(pendingFiles); 
                 } else {
                     System.out.println("⚠️ No file paths or file IDs found.");
                 }

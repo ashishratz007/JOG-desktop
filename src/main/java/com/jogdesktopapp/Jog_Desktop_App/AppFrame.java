@@ -11,12 +11,15 @@ import java.util.TimerTask;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import org.json.JSONObject;
 
 public class AppFrame extends JFrame {
     private JPanel contentPanel;
@@ -44,6 +47,70 @@ public class AppFrame extends JFrame {
         initializeSocketStatusListener();
     }
 
+    
+    private void showLogoutConfirmation() {
+        // Create a custom dialog
+        JDialog dialog = new JDialog(this, "Logout Confirmation", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(300, 150);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        // Message panel
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+        
+        JLabel messageLabel = new JLabel("<html><center>Are you sure you want to logout from this device?</center></html>");
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        messagePanel.add(messageLabel, BorderLayout.CENTER);
+        
+        dialog.add(messagePanel, BorderLayout.CENTER);
+
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(e -> {
+        	
+        	String token = "";
+        	
+        	String response = GlobalDataClass.getInstance().readTokenFromDesktop();
+        
+        	// Parse JSON string
+        	JSONObject jsonObject = new JSONObject(response);
+        	boolean isLogout =  ApiCalls.logout(jsonObject.getString("session_token"));
+        	if(isLogout) {
+        		GlobalDataClass.getInstance().deleteTokenFile();
+        		cleanupBeforeRestart();
+        	}
+        	dialog.dispose();
+        });
+        
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
+    }
+    
+    
+    private void cleanupBeforeRestart() {
+        // Close any open resources
+        SocketModel.getInstance().close(); 
+        
+        
+        // Dispose of any open windows
+        Window[] windows = Window.getWindows();
+        for (Window window : windows) {
+            window.dispose();
+            App.main(tabNames); 
+        }
+    }
+    
     private void initialize() {
         // Frame setup
         setTitle("JOG Desktop App");
@@ -90,35 +157,34 @@ public class AppFrame extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         appbar.add(titleLabel, BorderLayout.CENTER);
 
-        // Status Panel
+     // Status Panel
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         statusPanel.setBackground(Color.WHITE);
 
-        // Status Dot
-        statusDot = new StatusDot(new Color(132, 226, 89));
-        
-        // Status Label
-        statusLabel = new JLabel("Online");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        statusLabel.addMouseListener(new MouseAdapter() {
+        // Logout Button
+        ImageIcon logoutIcon = new ImageIcon("src/main/resources/icons/logout.png"); // Make sure you have this icon
+        Image logoutImage = logoutIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        JLabel logoutLabel = new JLabel(new ImageIcon(logoutImage));
+        logoutLabel.setToolTipText("Logout");
+        logoutLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        logoutLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("Status label clicked");
-                new SwingWorker<Void, String>() {
-                    @Override
-                    protected Void doInBackground() {
-                        return null;
-                    }
-                    @Override
-                    protected void done() {
-                        // TODO
-                    }
-                }.execute();
+                showLogoutConfirmation();
             }
         });
 
+        // Status Dot
+        statusDot = new StatusDot(new Color(132, 226, 89));
+
+        // Status Label
+        statusLabel = new JLabel("Online");
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+
+       
         statusPanel.add(statusDot);
         statusPanel.add(statusLabel);
+        statusPanel.add(logoutLabel);
         appbar.add(statusPanel, BorderLayout.EAST);
         getContentPane().add(appbar, BorderLayout.NORTH);
 
@@ -130,6 +196,8 @@ public class AppFrame extends JFrame {
         // Set default selected tab
         setSelectedTab(0);
     }
+    
+
 
     private void initializeSocketStatusListener() {
         SocketModel socket = SocketModel.getInstance();

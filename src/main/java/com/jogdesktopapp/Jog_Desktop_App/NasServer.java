@@ -40,17 +40,17 @@ public class NasServer implements SftpUploaderListener {
 
 	void fillPendingData() {
 		System.out.println("🏁 Executing fillPendingData() on EDT");
-		if (App.sftpClient == null) {
+		if (App.globalData.sftpClient == null) {
 			System.out.println("⚠️ Error: sftpClient is null");
 			return;
 		}
 
-		if (App.sftpClient.pendingUpload == null) {
+		if (App.globalData.sftpClient.pendingUpload == null) {
 			System.out.println("⚠️ Warning: pendingUpload list is null");
 			return;
 		}
 
-		List<UploadFile> pendingUpload = App.sftpClient.pendingUpload;
+		List<UploadFile> pendingUpload = App.globalData.sftpClient.pendingUpload;
 		System.out.println("📤 Filling pending data. Found " + pendingUpload.size() + " items");
 
 		Object[][] data = new Object[pendingUpload.size()][2];
@@ -114,8 +114,8 @@ public class NasServer implements SftpUploaderListener {
 			fillPendingData();
 		});
 		System.out.println("🏗️ Building NAS Server view");
-		App.sftpClient.addStatusListener(this);
-		setStatusPanel(App.sftpClient.currentStatus);
+		App.globalData.sftpClient.addStatusListener(this);
+		setStatusPanel(App.globalData.sftpClient.currentStatus);
 
 		// Initialize live panel
 		livePanel.removeAll();
@@ -137,7 +137,7 @@ public class NasServer implements SftpUploaderListener {
 		titlePanel.add(titleLabel, BorderLayout.WEST);
 
 		// Status Panel
-		JLabel ipLabel = new JLabel("IP:" + App.sftpClient.SFTP_HOST);
+		JLabel ipLabel = new JLabel("IP:" + App.globalData.sftpClient.SFTP_HOST);
 		ipLabel.setForeground(Color.BLUE);
 		ipLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -163,7 +163,7 @@ public class NasServer implements SftpUploaderListener {
 			int selectedIndex = tabbedPane.getSelectedIndex();
 			System.out.println("🔘 Tab changed to index: " + selectedIndex);
 			if (selectedIndex == 0) {
-				System.out.println("Pending file length is :  " + App.sftpClient.pendingUpload.size());
+				System.out.println("Pending file length is :  " + App.globalData.sftpClient.pendingUpload.size());
 				fillPendingData();
 			} else if (selectedIndex == 1) {
 				loadDownloadData(currentDownloadPage);

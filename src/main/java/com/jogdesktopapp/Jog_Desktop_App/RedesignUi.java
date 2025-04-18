@@ -384,7 +384,7 @@ public class RedesignUi {
                     new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() throws Exception {
-                        	App.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
+                        	App.globalData.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
                             return null;
                         }
                         

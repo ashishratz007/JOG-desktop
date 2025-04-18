@@ -13,6 +13,98 @@ import org.json.JSONObject;
 
 public class ApiCalls {
     
+	// login to user account
+    public static String login(String username, String password,  String serialnumber) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/login_adobe.php";
+        String jsonInputString = "{\"username\": \"" + username + "\", \"password\": \"" + password + "\", \"serialnumber\": \"" + serialnumber + "\"}"; 
+        
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = conn.getResponseCode();
+         // Read response
+            String response;
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                response = br.readLine();
+            }
+            System.out.println("Response is : " + response);
+            if (responseCode == HttpURLConnection.HTTP_OK && !response.contains("error")) {
+            	System.out.println("Login done");
+            	GlobalDataClass.getInstance().saveTokenToDesktop(response);
+                return "sucess";
+            } else {
+            	String error = "User already logged in from another device";
+            	if(response.contains("Invalid")) {
+            		error = "Invalid credentials";
+            	}
+            	System.out.println(error);
+                throw new Exception(error); 
+            }
+        } catch (Exception e) {
+        	  System.out.println("Login Error");
+              return e.getMessage();
+        }
+    }
+	
+    // login to user account
+    public static boolean logout(String token) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/logout_adobe.php";
+        
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", token);
+            conn.setDoOutput(true);
+            
+
+         // Send empty JSON body (or remove if not needed)
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = "{}".getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+
+            int responseCode = conn.getResponseCode();
+         // Read response
+            String response;
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                response = br.readLine();
+            }
+            System.out.println("Response is : " + response);
+            if (responseCode == HttpURLConnection.HTTP_OK && !response.contains("error")) {
+            	System.out.println("Login done");
+                return true;
+            } else {
+            	String error = "Logout Error";
+            	if(response.contains("Invalid")) {
+            		error = "Invalid credentials";
+            	}
+            	System.out.println(error);
+                throw new Exception(error); 
+            }
+        } catch (Exception e) {
+        	  System.out.println("Login Error");
+              return false;
+        }
+    }
+	
 	// confirm your upload to synology server
     public static String confirmUpload(String id, String path,  String base64Image) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_synology.php";
@@ -23,6 +115,8 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
             
@@ -56,6 +150,8 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
             
@@ -89,6 +185,8 @@ public class ApiCalls {
             URL url = new URL(apiUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Accept", "application/json");
 
             // Check response code
@@ -132,6 +230,10 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Accept", "application/json");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+          
+            System.out.println("⚠️ Header Token: Bearer " + token);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
@@ -168,53 +270,57 @@ public class ApiCalls {
 
         return reprintModel;
     }
+   
     // get reprint list items
-    public static RedesignModel getRedesignList(int status, int limit, int page, String startDate, String endDate) {
-        String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/get_redesign_list.php";
-        RedesignModel redesignModel = null;
+ public static RedesignModel getRedesignList(int status, int limit, int page, String startDate, String endDate) {
+    String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/get_redesign_list.php";
+    RedesignModel redesignModel = null;
 
-        try {
-            URL url = new URL(apiUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
+    try {
+        URL url = new URL(apiUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Accept", "application/json");
+        String token = GlobalDataClass.getInstance().getToken();
+        conn.setRequestProperty("Authorization", "Bearer " + token);
+        System.out.println("⚠️ Redesign Token: Bearer " + token); // Debug token directly
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
 
-            JSONObject postData = new JSONObject();
-            postData.put("status", status);
-            postData.put("limit", limit);
-            postData.put("page", page);
-            postData.put("start_date", startDate);
-            postData.put("end_date", endDate);
-            
-            OutputStream os = conn.getOutputStream();
+        JSONObject postData = new JSONObject();
+        postData.put("status", status);
+        postData.put("limit", limit);
+        postData.put("page", page);
+        postData.put("start_date", startDate);
+        postData.put("end_date", endDate);
+
+        try (OutputStream os = conn.getOutputStream()) {
             os.write(postData.toString().getBytes());
-            os.flush();
-            os.close();
+        }
 
-            if (conn.getResponseCode() != 200) {
-                System.out.println("⚠️ Failed to fetch reprint list! HTTP error code: " + conn.getResponseCode());
-                return null;
+        if (conn.getResponseCode() != 200) {
+            System.out.println("⚠️ Failed! HTTP " + conn.getResponseCode());
+            try (BufferedReader err = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
+                err.lines().forEach(System.out::println);
             }
+            return null;
+        }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
             StringBuilder response = new StringBuilder();
             String output;
             while ((output = br.readLine()) != null) {
                 response.append(output);
             }
-            conn.disconnect();
-
             JSONObject jsonResponse = new JSONObject(response.toString());
             redesignModel = RedesignModel.fromJson(jsonResponse);
-        } catch (Exception e) {
-            System.out.println("❌ Error fetching redesigner list: " + e.getMessage());
         }
-
-        return redesignModel;
+    } catch (Exception e) {
+        System.out.println("❌ Error: " + e.getMessage());
+    } finally {
     }
-
+    return redesignModel;
+}
 	// confirm your pending file status
     public static String markComplete(boolean isReprint, String fileId) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/update_status.php";
@@ -227,6 +333,8 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
             
@@ -260,6 +368,8 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Accept", "application/json");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
@@ -304,6 +414,8 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Accept", "application/json");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
@@ -349,6 +461,8 @@ public class ApiCalls {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
             
