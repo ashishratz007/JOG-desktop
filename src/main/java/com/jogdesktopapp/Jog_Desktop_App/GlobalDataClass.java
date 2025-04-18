@@ -43,7 +43,10 @@ public class GlobalDataClass {
     
    // just binding the function to be called when the instance is created 
    private void init() {
-   
+	   reprintPendingData = new ReprintModel(0, null);
+	   reprintPendingData.data = new ArrayList<>(); // Empty list by default
+	   redesignPendingData = new RedesignModel(0, null);
+	   redesignPendingData.data = new ArrayList<>(); // Empty list by default
     }
    
    
@@ -51,6 +54,7 @@ public class GlobalDataClass {
     	
     	downloadFiles= null;
     	sftpClient = null;
+    	socketModel = null;
     	downloadFiles = PendingDataModel.getInstance();
     	sftpClient = SftpUploader.getInstance();
     	socketModel = SocketModel.getInstance();

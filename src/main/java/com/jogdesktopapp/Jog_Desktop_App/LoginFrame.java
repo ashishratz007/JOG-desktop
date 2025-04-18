@@ -108,8 +108,9 @@ public class LoginFrame extends JFrame {
         	// Close the login frame
             this.dispose();
             
+            
             initilizeData();
-            App.globalData.pendingAndReprint();// pending and reprint data
+//            App.globalData.pendingAndReprint();// pending and reprint data
             // Open the main application frame/panel
             runMainView();
         }
@@ -119,7 +120,7 @@ public class LoginFrame extends JFrame {
     	String tokenData = GlobalDataClass.getInstance().readTokenFromDesktop();
     	if(tokenData != null) {
     		initilizeData();
-    		 App.globalData.pendingAndReprint();// pending and reprint data
+//    		 App.globalData.pendingAndReprint();// pending and reprint data
     		runMainView();
     	}
     	else  SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));

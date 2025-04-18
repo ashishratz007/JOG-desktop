@@ -104,11 +104,8 @@ public class AppFrame extends JFrame {
         
         
         // Dispose of any open windows
-        Window[] windows = Window.getWindows();
-        for (Window window : windows) {
-            window.dispose();
-            App.main(tabNames); 
-        }
+        AppFrame.instance.dispose();
+        LoginFrame.view();
     }
     
     private void initialize() {
@@ -214,7 +211,7 @@ public class AppFrame extends JFrame {
         updateConnectionStatus(socket.isOpen());
     }
 
-    private void updateConnectionStatus(boolean isConnected) {
+     void updateConnectionStatus(boolean isConnected) {
         SwingUtilities.invokeLater(() -> {
             if (isConnected) {
                 statusDot.setFillColor(new Color(132, 226, 89)); // Green

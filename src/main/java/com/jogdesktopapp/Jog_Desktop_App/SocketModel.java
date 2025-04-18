@@ -32,6 +32,7 @@ public class SocketModel extends WebSocketClient {
                 e.printStackTrace();
             }
         }
+     
         return instance;
     }
     
@@ -47,6 +48,7 @@ public class SocketModel extends WebSocketClient {
         boolean oldValue = this.connected;
         this.connected = true;
         propertyChangeSupport.firePropertyChange("connected", oldValue, this.connected);
+    	AppFrame.getInstance().updateConnectionStatus(instance.connected);
         GlobalDataClass global = GlobalDataClass.getInstance();
     	String token = global.getToken();
     	// Create JSON object with the token
