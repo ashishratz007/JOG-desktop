@@ -28,8 +28,8 @@ public class AppFrame extends JFrame {
     private BadgeLabel[] tabBadges;
     private final String[] tabNames = {"Dashboard", "NAS Server","Reprint", "Redesign"};
     
-    private int reprintCount = GlobalDataClass.getInstance().reprintPendingData.totalCount;
-    private int redesignCount = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+    private int reprintCount = GlobalDataClass.getInstance().reprintPendingData.total;
+    private int redesignCount = GlobalDataClass.getInstance().redesignPendingData.total;
     
     private static AppFrame instance;
     private StatusDot statusDot;
@@ -247,8 +247,8 @@ public class AppFrame extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 setSelectedTab(index); 
-                reprintCount = GlobalDataClass.getInstance().reprintPendingData.totalCount;
-                redesignCount = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+                reprintCount = GlobalDataClass.getInstance().reprintPendingData.total;
+                redesignCount = GlobalDataClass.getInstance().redesignPendingData.total;
                 updateBadges();
             }
         });
@@ -294,7 +294,7 @@ public class AppFrame extends JFrame {
     }
 
     public void setReprintCount(int count) {
-        count = GlobalDataClass.getInstance().reprintPendingData.totalCount;
+        count = GlobalDataClass.getInstance().reprintPendingData.total;
         this.reprintCount = count;
         updateBadges();
     }
@@ -304,7 +304,7 @@ public class AppFrame extends JFrame {
     }
 
     public void setRedesignCount(int count) {
-        count = GlobalDataClass.getInstance().redesignPendingData.totalCount;
+        count = GlobalDataClass.getInstance().redesignDownloadingData.totalCount;
         this.redesignCount = count;
         updateBadges();
     }

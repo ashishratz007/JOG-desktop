@@ -30,8 +30,8 @@ public class PendingDataModel {
         new Thread(() -> {
             while (downloadReprintRunning) {
             	
-                synchronized (globalData.reprintPendingData) {
-                	 List<ReprintItem> pendingList = globalData.reprintPendingData.data;
+                synchronized (globalData.reprintDownlaodingData) {
+                	 List<ReprintItem> pendingList = globalData.reprintDownlaodingData.data;
                     if (!pendingList.isEmpty()) {
                     	ReprintItem item = pendingList.getFirst();
 
@@ -61,7 +61,7 @@ public class PendingDataModel {
     private void downloadPendingRedesignData() {
         new Thread(() -> {
             while (downloadRedeignRunning) {
-            	 List<RedesignItem> pendingList = globalData.redesignPendingData.data;
+            	 List<RedesignItem> pendingList = globalData.redesignDownloadingData.data;
                 synchronized (pendingList) {
                     if (!pendingList.isEmpty()) {
 //                        String item = pendingList.remove(0);

@@ -138,7 +138,7 @@ public class SocketModel extends WebSocketClient {
                 
             case "redesign_request":
                 GlobalDataClass globalData = GlobalDataClass.getInstance();
-                globalData.getRedesignData(1, oneYearAgo, today); 
+                globalData.getRedesignDownloadingData(1, oneYearAgo, today); 
                 int designerId = data.getInt("designer_id");
                 String designerName = data.getString("designer_name");
                 
@@ -150,7 +150,7 @@ public class SocketModel extends WebSocketClient {
                 
             case "reprint_notification":
                 GlobalDataClass globalDat = GlobalDataClass.getInstance();
-                globalDat.getReprintData(1, oneYearAgo, today);
+                globalDat.getReprintDownloadingData(1, oneYearAgo, today);
                 int fileId = data.getInt("file_id");
                 long barcode = data.getLong("barcode");
                 String printerName = data.getString("printer_name");

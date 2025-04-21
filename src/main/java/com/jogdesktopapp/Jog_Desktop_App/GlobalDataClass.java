@@ -1,16 +1,21 @@
 package com.jogdesktopapp.Jog_Desktop_App;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.SwingWorker;
+
 import org.json.JSONObject;
 
 import com.jogdesktopapp.Jog_Desktop_App.models.NotificationService;
 
+import java.awt.EventQueue;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,9 +48,13 @@ public class GlobalDataClass {
     
    // just binding the function to be called when the instance is created 
    private void init() {
-	   reprintPendingData = new ReprintModel(0, null);
+	   reprintDownlaodingData = new ReprintModel(0, null);
+	   reprintDownlaodingData.data = new ArrayList<>(); // Empty list by default
+	   reprintPendingData = new ReprintPendingModel(0,0,0, null);
 	   reprintPendingData.data = new ArrayList<>(); // Empty list by default
-	   redesignPendingData = new RedesignModel(0, null);
+	   redesignDownloadingData = new RedesignModel(0, null);
+	   redesignDownloadingData.data = new ArrayList<>(); // Empty list by default
+	   redesignPendingData = new RedesignPendingModel(0,0,0, null);
 	   redesignPendingData.data = new ArrayList<>(); // Empty list by default
     }
    
@@ -69,9 +78,11 @@ public class GlobalDataClass {
         LocalDate oneYearAgo = today.minusYears(1);
 
    	// make a API call when 
-        instance.getReprintData(1, oneYearAgo, today);// get reprint 
+        instance.getReprintDownloadingData(1, oneYearAgo, today);// get reprint download
+        instance.getReprintPendingData(1, oneYearAgo, today);// get reprint pending
         instance.getReprintCompleteData(1, oneYearAgo, today);// get reprint complete
-        instance.getRedesignData(1, oneYearAgo, today);// get redesign list 
+        instance.getRedesignDownloadingData(1, oneYearAgo, today);// get redesign list download
+        instance.getRedesignPendingData(1, oneYearAgo, today);// get redesign pending 
         instance.getRedesignCompleteData(1, oneYearAgo, today);// get redesign complete 
     }
    
@@ -84,8 +95,8 @@ public class GlobalDataClass {
    NotificationService notification = new NotificationService();
     
     // Reprint data set 
-    public ReprintModel reprintPendingData = new ReprintModel(0, null);  
-    public void getReprintData(int page,  LocalDate startDate,  LocalDate endDate) {
+    public ReprintModel reprintDownlaodingData = new ReprintModel(0, null);  
+    public void getReprintDownloadingData(int page,  LocalDate startDate,  LocalDate endDate) {
         
         // Format the dates as "yyyy-MM-dd"
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -93,11 +104,30 @@ public class GlobalDataClass {
         String endDateStr = endDate.format(formatter);
 
         // Call API with dynamic dates
-        reprintPendingData = ApiCalls.getReprintList(0, 10, page, startDateStr, endDateStr);
+        reprintDownlaodingData = ApiCalls.getReprintList(0, 10, page, startDateStr, endDateStr);
+        startDownload();
         // Update reprint count
         AppFrame frame = AppFrame.getInstance();
-        frame.setReprintCount(reprintPendingData.totalCount);
+//        frame.setReprintCount(reprintData.totalCount);
     }  
+    
+    
+    // Reprint data set 
+    public ReprintPendingModel reprintPendingData = new ReprintPendingModel(0,0,0, null);  
+    public void getReprintPendingData(int page,  LocalDate startDate,  LocalDate endDate) {
+        
+        // Format the dates as "yyyy-MM-dd"
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String startDateStr = startDate.format(formatter);
+        String endDateStr = endDate.format(formatter);
+
+        // Call API with dynamic dates
+        reprintPendingData = ApiCalls.getReprintPendingList(0, 10, page, startDateStr, endDateStr);
+        // Update reprint count
+        AppFrame frame = AppFrame.getInstance();
+        frame.setReprintCount(reprintPendingData.total);
+    }  
+    
     
     // Reprint complete data set 
     public ReprintModel reprintCompleteData = new ReprintModel(0, null);  
@@ -118,8 +148,8 @@ public class GlobalDataClass {
     
     
     // Redesign data set 
-    public RedesignModel redesignPendingData = new RedesignModel(0, null);  
-    public void getRedesignData(int page, LocalDate startDate,  LocalDate endDate) {
+    public RedesignModel redesignDownloadingData = new RedesignModel(0, null);  
+    public void getRedesignDownloadingData(int page, LocalDate startDate,  LocalDate endDate) {
         
         // Format the dates as "yyyy-MM-dd"
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -129,11 +159,31 @@ public class GlobalDataClass {
         
 
         // Call API with dynamic dates
-        redesignPendingData = ApiCalls.getRedesignList(0, 10, page, startDateStr, endDateStr);
+        redesignDownloadingData = ApiCalls.getRedesignList(0, 10, page, startDateStr, endDateStr);
+        startDownload();
      // Update redesign count
         AppFrame appFrame = AppFrame.getInstance();
-        appFrame.setRedesignCount(redesignPendingData.totalCount);
+//        appFrame.setRedesignCount(redesignDownloadingData.totalCount);
     }  
+    
+    // Redesign data set 
+    public RedesignPendingModel redesignPendingData = new RedesignPendingModel(0,0,0, null);  
+    public void getRedesignPendingData(int page, LocalDate startDate,  LocalDate endDate) {
+        
+        // Format the dates as "yyyy-MM-dd"
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String startDateStr = startDate.format(formatter);
+        String endDateStr = endDate.format(formatter);
+        LocalDate today = LocalDate.now();
+        
+
+        // Call API with dynamic dates
+        redesignPendingData = ApiCalls.getDesignPendingList(0, 10, page, startDateStr, endDateStr);
+     // Update redesign count
+        AppFrame appFrame = AppFrame.getInstance();
+        appFrame.setRedesignCount(redesignPendingData.total);
+    }  
+    
     
     // Redesign completed data set 
     public RedesignModel designCompleteData = new RedesignModel(0, null);  
@@ -216,6 +266,130 @@ public class GlobalDataClass {
     
     
     
+    /// auto download the files to the user system 
+    void startDownload(){
+    	startDownloadReprint();
+    	startDownloadRedesign();
+    }
+    
+   ReprintItem reprintCurrentDownload;
+   void startDownloadReprint(){
+	   if(reprintCurrentDownload != null) {
+			 return;
+		 } 
+   	EventQueue.invokeLater(() -> {
+			new SwingWorker<Void, Void>() {
+				@Override
+				protected Void doInBackground() throws Exception {
+					  if (reprintDownlaodingData.data.isEmpty()) {
+				            System.out.println("📤 No files to download.");
+				            return null;
+				        }
+					  List<ReprintItem> reprintDownloads = reprintDownlaodingData.data;
+				        System.out.println("📤 Starting batch downloading...");
+
+				        while (!reprintDownloads.isEmpty()) {
+				        	reprintCurrentDownload = reprintDownloads.get(0);
+				        	ReprintItem file = reprintCurrentDownload;
+//				        	file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
+				        	String dateStr = formatDate(file.created_on);
+				            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+				            LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
+				        	String fullData = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth(); 
+				        	String[] parts = fullData.split(",");
+			                String filePath = parts[0];
+			                String fileId = parts[1];
+			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
+		                       if(success) {
+//				            	currentFile = null;
+				                System.out.println("✅ Downloaded: " + reprintCurrentDownload.fileName);
+				                reprintDownloads.remove(0); // Remove after successful upload
+				                reprintDownlaodingData.data.remove(0);
+				                continue;
+		                       }
+		                       else {
+		                    	   break;
+		                       }
+				        }
+				        reprintCurrentDownload = null;
+				        System.out.println("📤 Download completed.");
+					return null;
+				}
+				@Override
+				protected void done() {
+					System.out.println("Dwonlaod completed");
+				}
+			}.execute();
+
+		});
+   }
+    
+  RedesignItem redesignCurrentDownload;
+  void startDownloadRedesign(){
+	 if(redesignCurrentDownload != null) {
+		 return;
+	 } 
+  	EventQueue.invokeLater(() -> {
+			new SwingWorker<Void, Void>() {
+				@Override
+				protected Void doInBackground() throws Exception {
+					  if (redesignDownloadingData.data.isEmpty()) {
+				            System.out.println("📤 No files to download.");
+				            return null;
+				        }
+					  List<RedesignItem> redesignDownloads = redesignDownloadingData.data;
+				        System.out.println("📤 Starting batch downloading...");
+
+				        while (!redesignDownloads.isEmpty()) {
+				        	redesignCurrentDownload = redesignDownloads.get(0);
+				        	RedesignItem file = redesignCurrentDownload;
+//				        	file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
+				        	String dateStr = formatDate(file.created_on);
+				            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+				            LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
+				        	String fullData = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth(); 
+				        	String[] parts = fullData.split(",");
+			                String filePath = parts[0];
+			                String fileId = parts[1];
+			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
+		                       if(success) {
+//				            	currentFile = null;
+				                System.out.println("✅ Downloaded: " + redesignCurrentDownload.fileName);
+				                redesignDownloads.remove(0); // Remove after successful upload
+				                redesignDownloadingData.data.remove(0);
+				                continue;
+		                       }
+		                       else {
+		                    	   break;
+		                       }
+				        }
+				        redesignCurrentDownload = null;
+				        System.out.println("📤 Download completed.");
+					return null;
+				}
+				@Override
+				protected void done() {
+					System.out.println("Dwonlaod completed");
+				}
+			}.execute();
+
+		});
+  }
+   
+    
+   // date format
+   String formatDate(String dateString) {
+       try {
+           DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+           LocalDateTime dateTime = LocalDateTime.parse(dateString, formatter);
+           dateTime = dateTime.plusHours(7);
+           return dateTime.format(formatter);
+       } catch (Exception e) {
+           System.err.println("Error formatting date: " + dateString + ", error: " + e.getMessage());
+           return dateString;
+       }
+   }
+    
     // Example functions 
     public void putItem(String key, Object value) {
         dataStore.put(key, value);
@@ -232,9 +406,4 @@ public class GlobalDataClass {
     public boolean containsKey(String key) {
         return dataStore.containsKey(key);
     }
-    
-    
-    
-    
-    
 }

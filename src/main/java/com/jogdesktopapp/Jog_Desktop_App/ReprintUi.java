@@ -21,13 +21,15 @@ public class ReprintUi {
     // UI Components
     private final JPanel mainPanel = new JPanel(new BorderLayout());
     private final JPanel statusLabel = new JPanel();
+    private JPanel downlaodingPanel = new JPanel();
     private JPanel pendingPanel = new JPanel();
     private JPanel completePanel = new JPanel();
     private final JTabbedPane tabbedPane = new JTabbedPane();
     private JPanel pagesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
     
     // Data Models
-    private ReprintModel pending = new ReprintModel(0, new ArrayList<>());
+    private ReprintModel downloading = new ReprintModel(0, new ArrayList<>());
+    private ReprintPendingModel pending = new ReprintPendingModel(0, 0, 0, new ArrayList<>());
     private ReprintModel complete = new ReprintModel(0, new ArrayList<>());
     private LocalDate startDate = LocalDate.now().minusYears(1);
     private LocalDate endDate = LocalDate.now();
@@ -36,12 +38,14 @@ public class ReprintUi {
     
     // Pagination Constants
     private static final int ITEMS_PER_PAGE = 10;
+    private int currentDownloadingPage = 1;
     private int currentPendingPage = 1;
     private int currentCompletePage = 1;
     int maxWidth = 100;
-    
+     
     public ReprintUi() {
-        pendingPanel = createPendingTablePanel(new Object[0][8]);
+        downlaodingPanel = createDownloadingTablePanel(new Object[0][8]);
+        pendingPanel = createPendingTablePanel(new Object[0][7]);
         completePanel = createCompleteTablePanel(new Object[0][6]);
         initializeUI();
         refreshData();
@@ -69,7 +73,7 @@ public class ReprintUi {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titlePanel.add(titleLabel, BorderLayout.WEST);
 
-        JLabel countLabel = new JLabel("Files for Reprint : " + globalData.reprintPendingData.totalCount);
+        JLabel countLabel = new JLabel("Files for Reprint : " + globalData.reprintDownlaodingData.totalCount);
         countLabel.setForeground(Color.WHITE);
         countLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -140,6 +144,7 @@ public class ReprintUi {
     
     private JTabbedPane createTabbedPane() {
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 10));
+        tabbedPane.addTab("Downloading", downlaodingPanel);
         tabbedPane.addTab("Pending", pendingPanel);
         tabbedPane.addTab("Complete", completePanel);
         tabbedPane.setUI(new CustomTabUIReprint());
@@ -154,11 +159,12 @@ public class ReprintUi {
     private void tabbedPaneChanged() {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
-            // When switching to Pending tab
+            displayDownloadingPage(currentDownloadingPage);
+            updatePageButtons(downloading.pageCount(), currentDownloadingPage);
+        } else if (selectedIndex == 1) {
             displayPendingPage(currentPendingPage);
             updatePageButtons(pending.pageCount(), currentPendingPage);
         } else {
-            // When switching to Complete tab
             displayCompletePage(currentCompletePage);
             updatePageButtons(complete.pageCount(), currentCompletePage);
         }
@@ -198,8 +204,15 @@ public class ReprintUi {
     }
     
     public void refreshData() {
+        fillDownloadingData();
         fillPendingData();
         fillCompleteData();
+    }
+    
+    private void fillDownloadingData() {
+        downloading = globalData.reprintDownlaodingData;
+        displayDownloadingPage(currentDownloadingPage); 
+        updatePageButtonsForCurrentTab();
     }
     
     private void fillPendingData() {
@@ -214,13 +227,13 @@ public class ReprintUi {
         updatePageButtonsForCurrentTab();
     }
     
-    private void displayPendingPage(int pageNumber) {
-        if (pending == null || pending.data == null) {
-            System.err.println("Pending data is null");
+    private void displayDownloadingPage(int pageNumber) {
+        if (downloading == null || downloading.data == null) {
+            System.err.println("Downloading data is null");
             return;
         }
         
-        List<ReprintItem> pageItems = pending.data;
+        List<ReprintItem> pageItems = downloading.data;
         Object[][] data = new Object[pageItems.size()][8];
         
         for (int i = 0; i < pageItems.size(); i++) {
@@ -237,6 +250,29 @@ public class ReprintUi {
             data[i][5] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
             data[i][6] = file.reprintId;
             data[i][7] = file.note != null ? file.note : "";
+        }
+        
+        refreshDownloadingTable(data);
+    }
+    
+    private void displayPendingPage(int pageNumber) {
+        if (pending == null || pending.data == null) {
+            System.err.println("Pending data is null");
+            return;
+        }
+        
+        List<ReprintPendingItem> pageItems = pending.data;
+        Object[][] data = new Object[pageItems.size()][7];
+        
+        for (int i = 0; i < pageItems.size(); i++) {
+            ReprintPendingItem file = pageItems.get(i);
+            data[i][0] = file.fileName;
+            data[i][1] = file.orderName;
+            data[i][2] = file.orderCode;
+            data[i][3] = "formatDate(file.created_on)";
+            data[i][4] = "file.printerName";
+            data[i][5] = file.synologyPath + "," + file.fileId + "," + file.orderCode;
+            data[i][6] = "";
         }
         
         refreshPendingTable(data);
@@ -276,6 +312,13 @@ public class ReprintUi {
         }
     }
     
+    private void refreshDownloadingTable(Object[][] data) {
+        downlaodingPanel.removeAll();
+        downlaodingPanel.add(createDownloadingTable(data));
+        downlaodingPanel.revalidate();
+        downlaodingPanel.repaint();
+    }
+    
     private void refreshPendingTable(Object[][] data) {
         pendingPanel.removeAll();
         pendingPanel.add(createPendingTable(data));
@@ -290,7 +333,7 @@ public class ReprintUi {
         completePanel.repaint();
     }
     
-    private JScrollPane createPendingTable(Object[][] data) {
+    private JScrollPane createDownloadingTable(Object[][] data) {
         String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
@@ -327,6 +370,44 @@ public class ReprintUi {
         configureDownloadColumn(table);
         configureCompleteColumn(table);
         configureNoteColumn(table);
+        
+        return new JScrollPane(table);
+    }
+    
+    private JScrollPane createPendingTable(Object[][] data) {
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Note"};
+        
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 5 || column == 6;
+            }
+        };
+        
+        JTable table = new JTable(model) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xC4D7E9));
+                }
+                return c;
+            }
+        };
+        
+        table.setRowHeight(30);
+        table.setGridColor(Color.DARK_GRAY);
+       
+        // Set fixed column widths
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Printer
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
+        
+        configureDownloadColumnForPending(table);
+        configureNoteColumnForPending(table);
         
         return new JScrollPane(table);
     }
@@ -393,6 +474,31 @@ public class ReprintUi {
         }, "src/main/resources/icons/download.png"));
     }
     
+    private void configureDownloadColumnForPending(JTable table) {
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
+        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String[] parts = e.getActionCommand().split(",");
+                String filePath = parts[0];
+                String fileId = parts[1];
+                String exCode = parts[2];
+                
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        App.globalData.sftpClient.pickAndDownloadFile(fileId, filePath, false, exCode,"","","");
+                        return null;
+                    }
+                    @Override
+                    protected void done() {
+                        System.out.println("File download completed.");
+                    }
+                }.execute();
+            }
+        }, "src/main/resources/icons/download.png"));
+    }
+    
     private void configureCompleteColumn(JTable table) {
         table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("src/main/resources/icons/complete.png"));
         table.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new AbstractAction() {
@@ -409,14 +515,14 @@ public class ReprintUi {
                         @Override
                         protected Void doInBackground() throws Exception {
                             ApiCalls.markComplete(true, e.getActionCommand());
-                            App.globalData.getReprintData(currentPendingPage, startDate, endDate);
+                            App.globalData.getReprintDownloadingData(currentDownloadingPage, startDate, endDate);
                             App.globalData.getReprintCompleteData(currentCompletePage, startDate, endDate);
                             return null;
                         }
                         @Override
                         protected void done() {
                             SwingUtilities.invokeLater(() -> {
-                                fillPendingData();
+                                fillDownloadingData();
                                 fillCompleteData();
                             });
                         }
@@ -429,6 +535,24 @@ public class ReprintUi {
     private void configureNoteColumn(JTable table) {
         table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
         table.getColumnModel().getColumn(7).setCellEditor(new ButtonEditor(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String note = e.getActionCommand();
+                if (note != null && !note.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        note, 
+                        "Note", 
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }, "src/main/resources/icons/note.png"));
+    }
+    
+    private void configureNoteColumnForPending(JTable table) {
+        table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
+        table.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String note = e.getActionCommand();
@@ -492,6 +616,9 @@ public class ReprintUi {
     private void handlePageSelection(int pageNumber) {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
+            currentDownloadingPage = pageNumber;
+            loadDownloadingData(pageNumber);
+        } else if (selectedIndex == 1) {
             currentPendingPage = pageNumber;
             loadPendingData(pageNumber);
         } else {
@@ -501,13 +628,37 @@ public class ReprintUi {
         logPageSelection(pageNumber);
     }
     
+    private void loadDownloadingData(int pageNumber) {
+        setStatusPanel("Loading Downloading data...");
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    App.globalData.getReprintDownloadingData(pageNumber, startDate, endDate);
+                } catch (Exception e) {
+                    System.err.println("Error loading downloading data: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                SwingUtilities.invokeLater(() -> {
+                    setStatusPanel("Idle");
+                    fillDownloadingData();
+                });
+            }
+        }.execute();
+    }
+
     private void loadPendingData(int pageNumber) {
         setStatusPanel("Loading pending data...");
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
                 try {
-                    App.globalData.getReprintData(pageNumber, startDate, endDate);
+                    App.globalData.getReprintPendingData(pageNumber, startDate, endDate);
                 } catch (Exception e) {
                     System.err.println("Error loading pending data: " + e.getMessage());
                     e.printStackTrace();
@@ -560,6 +711,9 @@ public class ReprintUi {
         int totalPages, currentPage;
         
         if (selectedIndex == 0) {
+            totalPages = downloading.pageCount();
+            currentPage = currentDownloadingPage;
+        } else if (selectedIndex == 1) {
             totalPages = pending.pageCount();
             currentPage = currentPendingPage;
         } else {
@@ -651,7 +805,7 @@ public class ReprintUi {
         return button;
     }
     
-    private JPanel createPendingTablePanel(Object[][] data) {
+    private JPanel createDownloadingTablePanel(Object[][] data) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
@@ -696,6 +850,48 @@ public class ReprintUi {
         return panel;
     }
 
+    private JPanel createPendingTablePanel(Object[][] data) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(0xC4D7E9));
+        
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Note"};
+        
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 5 || column == 6;
+            }
+        };
+        
+        JTable table = new JTable(model) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xC4D7E9));
+                }
+                return c;
+            }
+        };
+        
+        table.setRowHeight(30);
+        table.setGridColor(Color.DARK_GRAY);
+        
+        // Set fixed column widths
+        table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Printer
+        table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
+        
+        configureDownloadColumnForPending(table);
+        configureNoteColumnForPending(table);
+        
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        return panel;
+    }
+
     private JPanel createCompleteTablePanel(Object[][] data) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
@@ -733,7 +929,12 @@ public class ReprintUi {
         return panel;
     }
     
-    public void updatePendingData(ReprintModel newData) {
+    public void updateDownloadingData(ReprintModel newData) {
+        this.downloading = newData;
+        fillDownloadingData();
+    }
+    
+    public void updatePendingData(ReprintPendingModel newData) {
         this.pending = newData;
         fillPendingData();
     }
@@ -758,6 +959,9 @@ public class ReprintUi {
     private void refreshDataForDateRange() {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex == 0) {
+            currentDownloadingPage = 1;
+            loadDownloadingData(currentDownloadingPage);
+        } else if (selectedIndex == 1) {
             currentPendingPage = 1;
             loadPendingData(currentPendingPage);
         } else {

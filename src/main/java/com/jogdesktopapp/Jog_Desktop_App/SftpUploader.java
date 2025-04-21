@@ -287,10 +287,9 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
      */
     public void pickAndDownloadFile(String fileId,   String downloadPath, boolean isDesign ,String exCode, String year, String month, String day) {
         downloadFile(fileId, downloadPath,isDesign, exCode, year, month, day); 
-        
-    }
+         }
     
-public void downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month,String day) {
+public boolean downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month,String day) {
     notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");
@@ -320,7 +319,7 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign ,St
         if (!created) {
             System.err.println("❌ Failed to create directories for path: " + storePath);
             notifyStatusChange(SftpUploaderStatus.IDLE);
-            return;
+            return false;
         }
     }
     
@@ -353,15 +352,18 @@ public void downloadFile(String fileId, String downloadPath,boolean isDesign ,St
             ApiCalls.confirmDownload(fileId);
         } catch (IOException e) {
             System.err.println("❌ Failed to open download folder: " + e.getMessage());
+            return false;
         }
 
     } catch (JSchException | SftpException | IOException e) {
         System.err.println("❌ SFTP Download Error: " + e.getMessage());
+        return false;
     } finally {
         notifyStatusChange(SftpUploaderStatus.IDLE);
         if (channel != null) channel.disconnect();
         if (session != null) session.disconnect();
     }
+    return true;
 }
     
     // Pick the folder from a directory

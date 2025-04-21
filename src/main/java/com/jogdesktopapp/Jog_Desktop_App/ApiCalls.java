@@ -271,6 +271,110 @@ public class ApiCalls {
         return reprintModel;
     }
    
+    // get reprint pending task list items
+    public static ReprintPendingModel getReprintPendingList(int status, int limit, int page, String startDate, String endDate) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_reprint_files.php";
+        ReprintPendingModel reprintModel = null;
+
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Accept", "application/json");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
+          
+            System.out.println("⚠️ Header Token: Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject postData = new JSONObject();
+            postData.put("is_downloaded", 1);
+            postData.put("limit", limit);
+            postData.put("page", page);
+            postData.put("start_date", startDate);
+            postData.put("end_date", endDate);
+            
+            OutputStream os = conn.getOutputStream();
+            os.write(postData.toString().getBytes());
+            os.flush();
+            os.close();
+
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch pending reprint list! HTTP error code: " + conn.getResponseCode());
+                return null;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            reprintModel = ReprintPendingModel.fromJson(jsonResponse);
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching pending reprint list: " + e.getMessage());
+        }
+
+        return reprintModel;
+    }
+   
+    // get redesign list items
+    public static RedesignPendingModel getDesignPendingList(int status, int limit, int page, String startDate, String endDate) {
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_redesign_files.php";
+        RedesignPendingModel redesignModel = null;
+
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Accept", "application/json");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
+          
+            System.out.println("⚠️ Header Token: Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject postData = new JSONObject();
+            postData.put("is_downloaded", 1);
+            postData.put("limit", limit);
+            postData.put("page", page);
+            postData.put("start_date", startDate);
+            postData.put("end_date", endDate);
+            
+            OutputStream os = conn.getOutputStream();
+            os.write(postData.toString().getBytes());
+            os.flush();
+            os.close();
+
+            if (conn.getResponseCode() != 200) {
+                System.out.println("⚠️ Failed to fetch pending redesign list! HTTP error code: " + conn.getResponseCode());
+                return null;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            redesignModel = RedesignPendingModel.fromJson(jsonResponse);
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching pending redesign list: " + e.getMessage());
+        }
+
+        return redesignModel;
+    }
+   
+    
+    
     // get reprint list items
  public static RedesignModel getRedesignList(int status, int limit, int page, String startDate, String endDate) {
     String apiUrl = "https://jog-desktop.jog-joinourgame.com/mobile/get_redesign_list.php";
