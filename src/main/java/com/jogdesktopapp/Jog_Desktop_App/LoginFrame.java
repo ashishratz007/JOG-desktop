@@ -174,7 +174,9 @@ public class LoginFrame extends JFrame {
 				new SwingWorker<Void, Void>() {
 					@Override
 					protected Void doInBackground() throws Exception {
-						 GlobalDataClass.getInstance().initilizeData(); 
+						GlobalDataClass instance =  GlobalDataClass.getInstance();
+						instance.initilizeData(); 
+						instance.pendingAndReprint(); 
 						return null;
 					}
 					@Override

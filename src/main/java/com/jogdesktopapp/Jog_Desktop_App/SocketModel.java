@@ -39,7 +39,9 @@ public class SocketModel extends WebSocketClient {
     void connectSocket(){
     	if(!this.connected) {
             instance.connect();
+            return;
     	}
+    	return;
     }
 
     @Override

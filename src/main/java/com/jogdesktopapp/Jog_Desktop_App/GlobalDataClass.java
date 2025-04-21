@@ -56,19 +56,21 @@ public class GlobalDataClass {
 	   redesignDownloadingData.data = new ArrayList<>(); // Empty list by default
 	   redesignPendingData = new RedesignPendingModel(0,0,0, null);
 	   redesignPendingData.data = new ArrayList<>(); // Empty list by default
+	   
     }
    
    
     void initilizeData() {
-    	
     	downloadFiles= null;
     	sftpClient = null;
     	socketModel = null;
     	downloadFiles = PendingDataModel.getInstance();
     	sftpClient = SftpUploader.getInstance();
     	socketModel = SocketModel.getInstance();
-    	socketModel.connectSocket();
+    	System.err.println("Api called for reprint and redesign");
     	pendingAndReprint();
+    	socketModel.connectSocket();
+    	
     }
     
     void pendingAndReprint(){
