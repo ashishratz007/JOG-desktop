@@ -105,6 +105,7 @@ public class GlobalDataClass {
 
         // Call API with dynamic dates
         reprintDownlaodingData = ApiCalls.getReprintList(0, 10, page, startDateStr, endDateStr);
+        System.err.println("reprint data downloading :  " + reprintDownlaodingData.data.size());
         startDownload();
         // Update reprint count
         AppFrame frame = AppFrame.getInstance();
@@ -123,6 +124,7 @@ public class GlobalDataClass {
 
         // Call API with dynamic dates
         reprintPendingData = ApiCalls.getReprintPendingList(0, 10, page, startDateStr, endDateStr);
+        System.err.println("reprint data pending :  " + reprintPendingData.data.size());
         // Update reprint count
         AppFrame frame = AppFrame.getInstance();
         frame.setReprintCount(reprintPendingData.total);
@@ -160,6 +162,7 @@ public class GlobalDataClass {
 
         // Call API with dynamic dates
         redesignDownloadingData = ApiCalls.getRedesignList(0, 10, page, startDateStr, endDateStr);
+        System.err.println("redsign data downloading :  " + redesignDownloadingData.data.size());
         startDownload();
      // Update redesign count
         AppFrame appFrame = AppFrame.getInstance();
@@ -179,6 +182,7 @@ public class GlobalDataClass {
 
         // Call API with dynamic dates
         redesignPendingData = ApiCalls.getDesignPendingList(0, 10, page, startDateStr, endDateStr);
+        System.err.println("redsign data pending :  " + redesignPendingData.data.size());
      // Update redesign count
         AppFrame appFrame = AppFrame.getInstance();
         appFrame.setRedesignCount(redesignPendingData.total);
