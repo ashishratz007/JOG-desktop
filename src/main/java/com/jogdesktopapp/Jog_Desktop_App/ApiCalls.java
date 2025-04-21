@@ -373,6 +373,41 @@ public class ApiCalls {
         return redesignModel;
     }
    
+	// confirm your upload to synology server
+    public static String confirmDwonload(boolean isRerpint, int rep_id) {
+    	String table = isRerpint?  "reprint": "redesign";
+        String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_download_status.php";
+        String jsonInputString = "{\"table\": \"" + table + "\", \"synology_path\": \"" + rep_id + "\"}";
+        
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            String token = GlobalDataClass.getInstance().getToken();
+            conn.setRequestProperty("Authorization", token);
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+            	System.out.println("dowload mark setup sucess");
+                return "Success: " + responseCode;
+            } else {
+            	System.out.println("dowload setup Error");
+                return "Failed: " + responseCode;
+            }
+        } catch (Exception e) {
+        	System.out.println("dowload setup Error");
+            return "Error: " + e.getMessage();
+        }
+    }
     
     
     // get reprint list items

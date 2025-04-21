@@ -309,6 +309,7 @@ public class GlobalDataClass {
 			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
 		                       if(success) {
 //				            	currentFile = null;
+		                    	   ApiCalls.confirmDwonload(true,reprintCurrentDownload.reprintId);
 				                System.out.println("✅ Downloaded: " + reprintCurrentDownload.fileName);
 				                reprintDownloads.remove(0); // Remove after successful upload
 				                reprintDownlaodingData.data.remove(0);
@@ -362,6 +363,8 @@ public class GlobalDataClass {
 		                       if(success) {
 //				            	currentFile = null;
 				                System.out.println("✅ Downloaded: " + redesignCurrentDownload.fileName);
+				                
+				                ApiCalls.confirmDwonload(false,redesignCurrentDownload.redesignId);
 				                redesignDownloads.remove(0); // Remove after successful upload
 				                redesignDownloadingData.data.remove(0);
 				                continue;
