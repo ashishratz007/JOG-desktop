@@ -251,6 +251,7 @@ public class RedesignUi {
             data[i][4] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
             data[i][5] = file.redesignId;
             data[i][6] = file.note != null ? file.note : "";
+            
         }
         
         refreshDownloadingTable(data);
