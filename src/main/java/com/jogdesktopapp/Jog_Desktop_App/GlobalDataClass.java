@@ -76,10 +76,11 @@ public class GlobalDataClass {
     void pendingAndReprint(){
     	LocalDate today = LocalDate.now();
         
+    	
         // Get the date one year before today
         LocalDate oneYearAgo = today.minusYears(1);
 
-   	// make a API call when 
+   	    // make a API call when 
         instance.getReprintDownloadingData(1, oneYearAgo, today);// get reprint download
         instance.getReprintPendingData(1, oneYearAgo, today);// get reprint pending
         instance.getReprintCompleteData(1, oneYearAgo, today);// get reprint complete
