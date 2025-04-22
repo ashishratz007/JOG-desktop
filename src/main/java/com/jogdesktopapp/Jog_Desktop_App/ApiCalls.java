@@ -375,6 +375,7 @@ public class ApiCalls {
    
 	// confirm your upload to synology server
     public static String confirmDwonload(boolean isRerpint, int rep_id) {
+    	System.out.println("starting");
     	String table = isRerpint?  "reprint": "redesign";
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_download_status.php";
         String jsonInputString = "{\"table\": \"" + table + "\", \"synology_path\": \"" + rep_id + "\"}";
