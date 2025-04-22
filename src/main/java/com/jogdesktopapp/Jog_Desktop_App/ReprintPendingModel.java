@@ -50,20 +50,36 @@ class ReprintPendingItem {
     int reprintStatus;
     int repId;
     int fileId;
-    String orderCode;
+    String printerName;
+    String note;
+    String createdOn;
+    String exCode;
     String orderName;
     String filePath;
     String synologyPath;
     String fileName;
     int synologyStatus;
 
-    public ReprintPendingItem(int reprintStatus, int repId, int fileId, String orderCode, 
-                      String orderName, String filePath, String synologyPath, 
-                      String fileName, int synologyStatus) {
+    public ReprintPendingItem(
+    		int reprintStatus,
+    		int repId,
+    		int fileId, 
+    	    String printerName,
+    	    String note,
+    	    String createdOn,
+    		String orderCode, 
+            String orderName,
+            String filePath,
+            String synologyPath, 
+            String fileName,
+            int synologyStatus) {
         this.reprintStatus = reprintStatus;
         this.repId = repId;
         this.fileId = fileId;
-        this.orderCode = orderCode;
+        this.printerName = printerName;
+        this.note = note;
+        this.createdOn = createdOn;
+        this.exCode = orderCode;
         this.orderName = orderName;
         this.filePath = filePath;
         this.synologyPath = synologyPath;
@@ -76,7 +92,10 @@ class ReprintPendingItem {
             jsonObj.getInt("reprint_status"),
             jsonObj.getInt("rep_id"),
             jsonObj.getInt("file_id"),
-            jsonObj.getString("order_code"),
+            jsonObj.getString("printerName"),
+            jsonObj.getString("note"),
+            jsonObj.getString("created_on"),
+            jsonObj.getString("exCode"),
             jsonObj.getString("order_name"),
             jsonObj.getString("file_path"),
             jsonObj.getString("synology_path"),

@@ -272,7 +272,7 @@ public class ApiCalls {
     }
    
     // get reprint pending task list items
-    public static ReprintPendingModel getReprintPendingList(int status, int limit, int page, String startDate, String endDate) {
+    public static ReprintPendingModel getReprintPendingList(boolean isDownlaoded, int status, int limit, int page, String startDate, String endDate) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_reprint_files.php";
         ReprintPendingModel reprintModel = null;
 
@@ -289,7 +289,7 @@ public class ApiCalls {
             conn.setDoOutput(true);
 
             JSONObject postData = new JSONObject();
-            postData.put("is_downloaded", 1);
+            postData.put("is_downloaded", isDownlaoded? 1: 0);
             postData.put("limit", limit);
             postData.put("page", page);
             postData.put("start_date", startDate);

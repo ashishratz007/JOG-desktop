@@ -28,7 +28,7 @@ public class ReprintUi {
     private JPanel pagesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
     
     // Data Models
-    private ReprintModel downloading = new ReprintModel(0, new ArrayList<>());
+    private ReprintPendingModel downloading = new ReprintPendingModel(0,0,0, new ArrayList<>());
     private ReprintPendingModel pending = new ReprintPendingModel(0, 0, 0, new ArrayList<>());
     private ReprintModel complete = new ReprintModel(0, new ArrayList<>());
     private LocalDate startDate = LocalDate.now().minusYears(1);
@@ -73,7 +73,7 @@ public class ReprintUi {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titlePanel.add(titleLabel, BorderLayout.WEST);
 
-        JLabel countLabel = new JLabel("Files for Reprint : " + globalData.reprintDownlaodingData.totalCount);
+        JLabel countLabel = new JLabel("Files for Reprint : " + globalData.reprintDownlaodingData.total);
         countLabel.setForeground(Color.WHITE);
         countLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -233,22 +233,22 @@ public class ReprintUi {
             return;
         }
         
-        List<ReprintItem> pageItems = downloading.data;
+        List<ReprintPendingItem> pageItems = downloading.data;
         Object[][] data = new Object[pageItems.size()][8];
         
         for (int i = 0; i < pageItems.size(); i++) {
-            ReprintItem file = pageItems.get(i);
-            String dateStr = formatDate(file.created_on);
+        	ReprintPendingItem file = pageItems.get(i);
+            String dateStr = formatDate(file.createdOn);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
             dateTime = dateTime.plusHours(7);
             data[i][0] = file.fileName;
             data[i][1] = file.orderName;
             data[i][2] = file.exCode;
-            data[i][3] = formatDate(file.created_on);
+            data[i][3] = formatDate(file.createdOn);
             data[i][4] = file.printerName;
-            data[i][5] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
-            data[i][6] = file.reprintId;
+            data[i][5] = file.synologyPath + "," + file.fileId + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
+            data[i][6] = file.repId;
             data[i][7] = file.note != null ? file.note : "";
         }
         
@@ -266,12 +266,15 @@ public class ReprintUi {
         
         for (int i = 0; i < pageItems.size(); i++) {
             ReprintPendingItem file = pageItems.get(i);
+            String dateStr = formatDate(file.createdOn);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
             data[i][0] = file.fileName;
             data[i][1] = file.orderName;
-            data[i][2] = file.orderCode;
+            data[i][2] = file.exCode;
             data[i][3] = "formatDate(file.created_on)";
             data[i][4] = "file.printerName";
-            data[i][5] = file.synologyPath + "," + file.fileId + "," + file.orderCode;
+            data[i][5] = file.synologyPath + "," + file.fileId + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
             data[i][6] = "";
         }
         
@@ -929,7 +932,7 @@ public class ReprintUi {
         return panel;
     }
     
-    public void updateDownloadingData(ReprintModel newData) {
+    public void updateDownloadingData(ReprintPendingModel newData) {
         this.downloading = newData;
         fillDownloadingData();
     }

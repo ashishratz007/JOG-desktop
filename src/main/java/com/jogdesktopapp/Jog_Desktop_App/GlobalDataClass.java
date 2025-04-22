@@ -48,7 +48,7 @@ public class GlobalDataClass {
     
    // just binding the function to be called when the instance is created 
    private void init() {
-	   reprintDownlaodingData = new ReprintModel(0, null);
+	   reprintDownlaodingData = new ReprintPendingModel(0,0,0, null);
 	   reprintDownlaodingData.data = new ArrayList<>(); // Empty list by default
 	   reprintPendingData = new ReprintPendingModel(0,0,0, null);
 	   reprintPendingData.data = new ArrayList<>(); // Empty list by default
@@ -98,7 +98,7 @@ public class GlobalDataClass {
    NotificationService notification = new NotificationService();
     
     // Reprint data set 
-    public ReprintModel reprintDownlaodingData = new ReprintModel(0, null);  
+    public ReprintPendingModel reprintDownlaodingData = new ReprintPendingModel(0,0,0, null);  
     public void getReprintDownloadingData(int page,  LocalDate startDate,  LocalDate endDate) {
         
         // Format the dates as "yyyy-MM-dd"
@@ -107,7 +107,7 @@ public class GlobalDataClass {
         String endDateStr = endDate.format(formatter);
 
         // Call API with dynamic dates
-        reprintDownlaodingData = ApiCalls.getReprintList(0, 10, page, startDateStr, endDateStr);
+        reprintDownlaodingData = ApiCalls.getReprintPendingList(false,0, 10, page, startDateStr, endDateStr);
         System.err.println("reprint data downloading :  " + reprintDownlaodingData.data.size());
         startDownload();
         // Update reprint count
@@ -126,7 +126,7 @@ public class GlobalDataClass {
         String endDateStr = endDate.format(formatter);
 
         // Call API with dynamic dates
-        reprintPendingData = ApiCalls.getReprintPendingList(0, 10, page, startDateStr, endDateStr);
+        reprintPendingData = ApiCalls.getReprintPendingList(true,0, 10, page, startDateStr, endDateStr);
         System.err.println("reprint data pending :  " + reprintPendingData.data.size());
         // Update reprint count
         AppFrame frame = AppFrame.getInstance();
@@ -279,7 +279,7 @@ public class GlobalDataClass {
     	startDownloadRedesign();
     }
     
-   ReprintItem reprintCurrentDownload;
+    ReprintPendingItem reprintCurrentDownload;
    void startDownloadReprint(){
 	   if(reprintCurrentDownload != null) {
 			 return;
@@ -292,24 +292,24 @@ public class GlobalDataClass {
 				            System.out.println("📤 No files to download.");
 				            return null;
 				        }
-					  List<ReprintItem> reprintDownloads = reprintDownlaodingData.data;
+					  List<ReprintPendingItem> reprintDownloads = reprintDownlaodingData.data;
 				        System.out.println("📤 Starting batch downloading...");
 
 				        while (!reprintDownloads.isEmpty()) {
 				        	reprintCurrentDownload = reprintDownloads.get(0);
-				        	ReprintItem file = reprintCurrentDownload;
+				        	ReprintPendingItem file = reprintCurrentDownload;
 //				        	file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
-				        	String dateStr = formatDate(file.created_on);
+				        	String dateStr = formatDate(file.createdOn);
 				            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 				            LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
-				        	String fullData = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth(); 
+				        	String fullData = file.synologyPath + "," + file.fileId + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth(); 
 				        	String[] parts = fullData.split(",");
 			                String filePath = parts[0];
 			                String fileId = parts[1];
 			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
 		                       if(success) {
 //				            	currentFile = null;
-		                    	   ApiCalls.confirmDwonload(true,reprintCurrentDownload.reprintId);
+		                    	   ApiCalls.confirmDwonload(true,reprintCurrentDownload.repId); 
 				                System.out.println("✅ Downloaded: " + reprintCurrentDownload.fileName);
 				                reprintDownloads.remove(0); // Remove after successful upload
 				                reprintDownlaodingData.data.remove(0);

@@ -31,9 +31,9 @@ public class PendingDataModel {
             while (downloadReprintRunning) {
             	
                 synchronized (globalData.reprintDownlaodingData) {
-                	 List<ReprintItem> pendingList = globalData.reprintDownlaodingData.data;
+                	 List<ReprintPendingItem> pendingList = globalData.reprintDownlaodingData.data;
                     if (!pendingList.isEmpty()) {
-                    	ReprintItem item = pendingList.getFirst();
+                    	ReprintPendingItem item = pendingList.getFirst();
 
                         try {
                         	//C:\Users\JOG-Graphic\Desktop\JOG India Workspace\download
