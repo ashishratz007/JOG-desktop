@@ -212,6 +212,12 @@ public class ReprintUi implements UpdateUiListener {
         fillCompleteData();
     }
     
+    public void loadData() {
+//    	loadDownloadingData(currentDownloadingPage);
+        loadPendingData(currentPendingPage);
+//        loadCompleteData(currentCompletePage);
+    }
+    
     private void fillDownloadingData() {
         downloading = globalData.reprintDownlaodingData;
         displayDownloadingPage(currentDownloadingPage); 
@@ -923,6 +929,7 @@ public class ReprintUi implements UpdateUiListener {
 	@Override
 	public void onUIChanged() {
 		 System.err.println("Refresh UI called");
+		 loadData();
 		refreshData();
 		
 	}
