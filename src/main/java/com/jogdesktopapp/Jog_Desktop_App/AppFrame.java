@@ -304,7 +304,7 @@ public class AppFrame extends JFrame {
     }
 
     public void setRedesignCount(int count) {
-        count = GlobalDataClass.getInstance().redesignDownloadingData.totalCount;
+        count = GlobalDataClass.getInstance().redesignDownloadingData.total;
         this.redesignCount = count;
         updateBadges();
     }

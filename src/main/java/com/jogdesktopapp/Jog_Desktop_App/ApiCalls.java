@@ -323,7 +323,7 @@ public class ApiCalls {
     }
    
     // get redesign list items
-    public static RedesignPendingModel getDesignPendingList(int status, int limit, int page, String startDate, String endDate) {
+    public static RedesignPendingModel getDesignPendingList(boolean isDownloaded, int status, int limit, int page, String startDate, String endDate) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_redesign_files.php";
         RedesignPendingModel redesignModel = null;
 
@@ -340,7 +340,7 @@ public class ApiCalls {
             conn.setDoOutput(true);
 
             JSONObject postData = new JSONObject();
-            postData.put("is_downloaded", 1);
+            postData.put("is_downloaded", isDownloaded? 1: 0);// 1 for pending and 0 for downloading
             postData.put("limit", limit);
             postData.put("page", page);
             postData.put("start_date", startDate);
@@ -374,7 +374,7 @@ public class ApiCalls {
     }
    
 	// confirm your upload to synology server
-    public static String confirmDwonload(boolean isRerpint, int rep_id) {
+    public static String confimDownload(boolean isRerpint, int rep_id) {
     	System.out.println("starting");
     	String table = isRerpint?  "reprint": "redesign";
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_download_status.php";

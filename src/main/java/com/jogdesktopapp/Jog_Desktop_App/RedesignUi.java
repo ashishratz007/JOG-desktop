@@ -28,7 +28,7 @@ public class RedesignUi {
     private JPanel pagesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
     
     // Data Models
-    private RedesignModel downloading = new RedesignModel(0, new ArrayList<>()); 
+    private RedesignPendingModel downloading = new RedesignPendingModel(0,0,0, new ArrayList<>()); 
     private RedesignPendingModel pending = new RedesignPendingModel(0, 0, 0, new ArrayList<>());
     private RedesignModel complete = new RedesignModel(0, new ArrayList<>());
     private LocalDate startDate = LocalDate.now().minusYears(1);
@@ -233,11 +233,11 @@ public class RedesignUi {
             return;
         }
         
-        List<RedesignItem> pageItems = downloading.data;
+        List<RedesignPendingItem> pageItems = downloading.data;
         Object[][] data = new Object[pageItems.size()][7];
         
         for (int i = 0; i < pageItems.size(); i++) {
-            RedesignItem file = pageItems.get(i);
+        	RedesignPendingItem file = pageItems.get(i);
             
             String dateStr = formatDate(file.created_on);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -246,10 +246,10 @@ public class RedesignUi {
             
             data[i][0] = file.fileName;
             data[i][1] = file.designerName;
-            data[i][2] = file.exCode;
+            data[i][2] = file.orderCode;
             data[i][3] = formatDate(file.created_on);
-            data[i][4] = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
-            data[i][5] = file.redesignId;
+            data[i][4] = file.synologyPath + "," + file.fileId + "," + file.orderCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
+            data[i][5] = file.repId;
             data[i][6] = file.note != null ? file.note : "";
             
         }
@@ -904,7 +904,7 @@ public class RedesignUi {
         return panel;
     }
     
-    public void updateDownloadingData(RedesignModel newData) {
+    public void updateDownloadingData(RedesignPendingModel newData) {
         this.downloading = newData;
         fillDownloadingData();
     }

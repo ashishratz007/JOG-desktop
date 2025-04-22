@@ -52,10 +52,24 @@ class RedesignPendingItem {
     String synologyPath;
     String fileName;
     int synologyStatus;
+    String note;
+    String designerName;
+    String created_on;
 
-    public RedesignPendingItem(int reprintStatus, int repId, int fileId, String orderCode, 
-                      String orderName, String filePath, String synologyPath, 
-                      String fileName, int synologyStatus) {
+    public RedesignPendingItem(
+    		int reprintStatus,
+    		int repId, 
+    		int fileId,
+    		String orderCode, 
+            String orderName,
+            String filePath,
+            String synologyPath, 
+            String fileName,
+            int synologyStatus,
+            String note,
+            String designerName,
+            String created_on
+    		) {
         this.reprintStatus = reprintStatus;
         this.repId = repId;
         this.fileId = fileId;
@@ -65,19 +79,25 @@ class RedesignPendingItem {
         this.synologyPath = synologyPath;
         this.fileName = fileName;
         this.synologyStatus = synologyStatus;
+        this.note = note;
+        this.designerName = designerName;
+        this.created_on = created_on;
     }
 
     public static RedesignPendingItem fromJson(JSONObject jsonObj) {
         return new RedesignPendingItem(
-            jsonObj.getInt("reprint_status"),
+            jsonObj.getInt("redesign_status"),
             jsonObj.getInt("rep_id"),
             jsonObj.getInt("file_id"),
-            jsonObj.getString("order_code"),
-            jsonObj.getString("order_name"),
+            jsonObj.getString("exCode"),
+            jsonObj.getString("orderName"),
             jsonObj.getString("file_path"),
-            jsonObj.getString("synology_path"),
+            jsonObj.getString("synologyPath"),
             jsonObj.getString("file_name"),
-            jsonObj.getInt("synology_status")
+            jsonObj.getInt("synology_status"),
+            jsonObj.getString("note"),
+            jsonObj.getString("designerName"),
+            jsonObj.getString("created_on")
         );
     }
 }

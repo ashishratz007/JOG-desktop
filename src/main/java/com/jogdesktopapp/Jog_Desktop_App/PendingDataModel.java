@@ -61,7 +61,7 @@ public class PendingDataModel {
     private void downloadPendingRedesignData() {
         new Thread(() -> {
             while (downloadRedeignRunning) {
-            	 List<RedesignItem> pendingList = globalData.redesignDownloadingData.data;
+            	 List<RedesignPendingItem> pendingList = globalData.redesignDownloadingData.data;
                 synchronized (pendingList) {
                     if (!pendingList.isEmpty()) {
 //                        String item = pendingList.remove(0);

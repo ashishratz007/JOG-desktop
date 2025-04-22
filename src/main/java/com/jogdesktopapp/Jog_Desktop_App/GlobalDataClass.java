@@ -52,7 +52,7 @@ public class GlobalDataClass {
 	   reprintDownlaodingData.data = new ArrayList<>(); // Empty list by default
 	   reprintPendingData = new ReprintPendingModel(0,0,0, null);
 	   reprintPendingData.data = new ArrayList<>(); // Empty list by default
-	   redesignDownloadingData = new RedesignModel(0, null);
+	   redesignDownloadingData = new RedesignPendingModel(0,0,0, null);
 	   redesignDownloadingData.data = new ArrayList<>(); // Empty list by default
 	   redesignPendingData = new RedesignPendingModel(0,0,0, null);
 	   redesignPendingData.data = new ArrayList<>(); // Empty list by default
@@ -69,6 +69,7 @@ public class GlobalDataClass {
     	socketModel = SocketModel.getInstance();
     	System.err.println("Api called for reprint and redesign");
     	pendingAndReprint();
+    	setUserRole();
     	socketModel.connectSocket();
     	
     }
@@ -153,7 +154,7 @@ public class GlobalDataClass {
     
     
     // Redesign data set 
-    public RedesignModel redesignDownloadingData = new RedesignModel(0, null);  
+    public RedesignPendingModel redesignDownloadingData = new RedesignPendingModel(0,0,0, null);  
     public void getRedesignDownloadingData(int page, LocalDate startDate,  LocalDate endDate) {
         
         // Format the dates as "yyyy-MM-dd"
@@ -164,7 +165,7 @@ public class GlobalDataClass {
         
 
         // Call API with dynamic dates
-        redesignDownloadingData = ApiCalls.getRedesignList(0, 10, page, startDateStr, endDateStr);
+        redesignDownloadingData = ApiCalls.getDesignPendingList(false,0, 10, page, startDateStr, endDateStr);
         System.err.println("redsign data downloading :  " + redesignDownloadingData.data.size());
         startDownload();
      // Update redesign count
@@ -184,7 +185,7 @@ public class GlobalDataClass {
         
 
         // Call API with dynamic dates
-        redesignPendingData = ApiCalls.getDesignPendingList(0, 10, page, startDateStr, endDateStr);
+        redesignPendingData = ApiCalls.getDesignPendingList(true,0, 10, page, startDateStr, endDateStr);
         System.err.println("redsign data pending :  " + redesignPendingData.data.size());
      // Update redesign count
         AppFrame appFrame = AppFrame.getInstance();
@@ -223,56 +224,6 @@ public class GlobalDataClass {
         }
     }
     
-    // read token
-    public  String readTokenFromDesktop() {
-        try {
-            // Get the path to the desktop file
-            String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
-            Path filePath = Paths.get(desktopPath);
-            
-            // Check if file exists
-            if (!Files.exists(filePath)) {
-                System.err.println("Token file not found on desktop");
-                return null;
-            }
-            
-            // Read all bytes and convert to String
-            byte[] fileBytes = Files.readAllBytes(filePath);
-            return new String(fileBytes);
-            
-        } catch (IOException e) {
-            System.err.println("Error reading token file: " + e.getMessage());
-            return null;
-        }
-    }
-    
-    public JSONObject getTokenData() {
-    	String response = GlobalDataClass.getInstance().readTokenFromDesktop();
-        if(response == null) {
-        	return null;
-        }
-    	// Parse JSON string
-    	JSONObject jsonObject = new JSONObject(response);
-    	return jsonObject;
-    }
-    
-    // delete token
-    public  boolean deleteTokenFile() {
-    	String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
-    	Path filePath = Paths.get(desktopPath);
-        try {
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
-            }
-            return true;
-        } catch (IOException e) {
-            System.err.println("Error deleting token file: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    
-    
     /// auto download the files to the user system 
     void startDownload(){
     	startDownloadReprint();
@@ -309,7 +260,7 @@ public class GlobalDataClass {
 			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
 		                       if(success) {
 //				            	currentFile = null;
-		                    	   ApiCalls.confirmDwonload(true,reprintCurrentDownload.repId); 
+		                    	   ApiCalls.confimDownload(true,reprintCurrentDownload.repId); 
 				                System.out.println("✅ Downloaded: " + reprintCurrentDownload.fileName);
 				                reprintDownloads.remove(0); // Remove after successful upload
 				                reprintDownlaodingData.data.remove(0);
@@ -332,7 +283,7 @@ public class GlobalDataClass {
 		});
    }
     
-  RedesignItem redesignCurrentDownload;
+   RedesignPendingItem redesignCurrentDownload;
   void startDownloadRedesign(){
 	 if(redesignCurrentDownload != null) {
 		 return;
@@ -345,17 +296,17 @@ public class GlobalDataClass {
 				            System.out.println("📤 No files to download.");
 				            return null;
 				        }
-					  List<RedesignItem> redesignDownloads = redesignDownloadingData.data;
+					  List<RedesignPendingItem> redesignDownloads = redesignDownloadingData.data;
 				        System.out.println("📤 Starting batch downloading...");
 
 				        while (!redesignDownloads.isEmpty()) {
 				        	redesignCurrentDownload = redesignDownloads.get(0);
-				        	RedesignItem file = redesignCurrentDownload;
+				        	RedesignPendingItem file = redesignCurrentDownload;
 //				        	file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
 				        	String dateStr = formatDate(file.created_on);
 				            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 				            LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
-				        	String fullData = file.synologyPath + "," + file.file_id + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth(); 
+				        	String fullData = file.synologyPath + "," + file.fileId + "," + file.orderCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth(); 
 				        	String[] parts = fullData.split(",");
 			                String filePath = parts[0];
 			                String fileId = parts[1];
@@ -364,7 +315,7 @@ public class GlobalDataClass {
 //				            	currentFile = null;
 				                System.out.println("✅ Downloaded: " + redesignCurrentDownload.fileName);
 				                
-				                ApiCalls.confirmDwonload(false,redesignCurrentDownload.redesignId);
+				                ApiCalls.confimDownload(false,redesignCurrentDownload.repId);
 				                redesignDownloads.remove(0); // Remove after successful upload
 				                redesignDownloadingData.data.remove(0);
 				                continue;
@@ -399,7 +350,80 @@ public class GlobalDataClass {
            return dateString;
        }
    }
-    
+   //==================================================token data========================================================== 
+   
+   // read token
+   public  String readTokenFromDesktop() {
+       try {
+           // Get the path to the desktop file
+           String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
+           Path filePath = Paths.get(desktopPath);
+           
+           // Check if file exists
+           if (!Files.exists(filePath)) {
+               System.err.println("Token file not found on desktop");
+               return null;
+           }
+           
+           // Read all bytes and convert to String
+           byte[] fileBytes = Files.readAllBytes(filePath);
+           return new String(fileBytes);
+           
+       } catch (IOException e) {
+           System.err.println("Error reading token file: " + e.getMessage());
+           return null;
+       }
+   }
+   
+   public JSONObject getTokenData() {
+   	String response = GlobalDataClass.getInstance().readTokenFromDesktop();
+       if(response == null) {
+       	return null;
+       }
+   	// Parse JSON string
+   	JSONObject jsonObject = new JSONObject(response);
+   	return jsonObject;
+   }
+   
+   // delete token
+   public  boolean deleteTokenFile() {
+   	String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
+   	Path filePath = Paths.get(desktopPath);
+       try {
+           if (Files.exists(filePath)) {
+               Files.delete(filePath);
+           }
+           return true;
+       } catch (IOException e) {
+           System.err.println("Error deleting token file: " + e.getMessage());
+           return false;
+       }
+   }
+   
+   int userRole = 0;
+   void setUserRole(){
+	   // for role 
+	   JSONObject tokenData = getTokenData();
+	   userRole = tokenData.getInt("role");
+   }
+   
+   
+   // role permission 1:Adobe, 2:Reprint, 3: Redesign,4:reprint/redesign
+   public boolean isAdobe() {
+	   return userRole == 1;
+   }
+   public boolean canReprint() {
+	   return userRole == 2 || userRole == 4;
+   }
+   
+   public boolean canRedeigner() {
+	   return userRole == 3 || userRole == 4;
+   }
+   
+   public boolean admin() {
+	   return userRole == 3 || userRole == 4;
+   }
+   
     // Example functions 
     public void putItem(String key, Object value) {
         dataStore.put(key, value);
