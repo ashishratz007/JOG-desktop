@@ -150,16 +150,29 @@ public class SocketModel extends WebSocketClient {
                 ); 
                 break;
                 
-            case "reprint_notification":
-                GlobalDataClass globalDat = GlobalDataClass.getInstance();
-                globalDat.getReprintDownloadingData(1, oneYearAgo, today);
-                int fileId = data.getInt("file_id");
-                long barcode = data.getLong("barcode");
-                String printerName = data.getString("printer_name");
+//            case "reprint_notification":
+//                GlobalDataClass globalDat = GlobalDataClass.getInstance();
+//                globalDat.getReprintDownloadingData(1, oneYearAgo, today);
+//                int fileId = data.getInt("file_id");
+//                long barcode = data.getLong("barcode");
+//                String printerName = data.getString("printer_name");
+//                
+//                NotificationService.showNotification(
+//                    "Reprint Notification",
+//                    "A reprint request has been received. Printer: " + printerName + "."
+//                );
+//                break;
+                
+            case  "reprint_request":
+            	GlobalDataClass globalData2 = GlobalDataClass.getInstance();
+                globalData2.getReprintDownloadingData(1, oneYearAgo, today);
+                int fileId2 = data.getInt("file_id");
+                long barcode2 = data.getLong("barcode");
+                String printerName2 = data.getString("printer_name");
                 
                 NotificationService.showNotification(
                     "Reprint Notification",
-                    "A reprint request has been received. Printer: " + printerName + "."
+                    "A reprint request has been received. Printer: " + printerName2 + "."
                 );
                 break;
                 
