@@ -271,7 +271,7 @@ public class ApiCalls {
         return reprintModel;
     }
    
-    // get reprint pending task list items
+    // get reprint pending task list items for downloaded and non downloaded files
     public static ReprintPendingModel getReprintPendingList(boolean isDownlaoded, int status, int limit, int page, String startDate, String endDate) {
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/get_reprint_files.php";
         ReprintPendingModel reprintModel = null;
