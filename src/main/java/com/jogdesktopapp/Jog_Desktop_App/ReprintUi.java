@@ -922,6 +922,7 @@ public class ReprintUi implements UpdateUiListener {
 
 	@Override
 	public void onUIChanged() {
+		 System.err.println("Refresh UI called");
 		refreshData();
 		
 	}
