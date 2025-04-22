@@ -912,7 +912,7 @@ public class RedesignUi implements UpdateUiListener{
 
 	@Override
 	public void onUIChanged() {
-		// TODO Auto-generated method stub
-		
+		 refreshData();
+	
 	}
 }
