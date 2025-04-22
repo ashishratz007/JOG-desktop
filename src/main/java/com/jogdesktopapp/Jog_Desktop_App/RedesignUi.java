@@ -16,7 +16,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.table.*;
 
-public class RedesignUi {
+public class RedesignUi implements UpdateUiListener{
     static GlobalDataClass globalData = GlobalDataClass.getInstance();
     // UI Components
     private final JPanel mainPanel = new JPanel(new BorderLayout());
@@ -168,6 +168,7 @@ public class RedesignUi {
             displayCompletePage(currentCompletePage);
             updatePageButtons(complete.pageCount(), currentCompletePage);
         }
+        refreshData();
     }
     
     private JPanel createPageFilterPanel() {
@@ -905,6 +906,13 @@ public class RedesignUi {
     }
     
     public JPanel getView() {
+    	App.globalData.addUIListener(this);
         return mainPanel;
     }
+
+	@Override
+	public void onUIChanged() {
+		// TODO Auto-generated method stub
+		
+	}
 }

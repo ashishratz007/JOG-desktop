@@ -286,10 +286,10 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
      * Downloads a file from the SFTP server.
      */
     public void pickAndDownloadFile(String fileId,   String downloadPath, boolean isDesign ,String exCode, String year, String month, String day) {
-        downloadFile(fileId, downloadPath,isDesign, exCode, year, month, day); 
+        downloadFile(fileId, downloadPath,isDesign, exCode, year, month, day, true); 
          }
     
-public boolean downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month,String day) {
+public boolean downloadFile(String fileId, String downloadPath,boolean isDesign ,String exCode, String year, String month,String day,boolean showFolder) {
     notifyStatusChange(SftpUploaderStatus.DOWNLOADING);
     String remoteFilePath = downloadPath;
     String[] dataSplit = remoteFilePath.split("/");
@@ -346,7 +346,7 @@ public boolean downloadFile(String fileId, String downloadPath,boolean isDesign 
         // Open the downloaded folder in file explorer
         try {
             File downloadedFile = new File(localFilePath);
-            if (downloadedFile.exists()) {
+            if (downloadedFile.exists() && showFolder) {
                 Desktop.getDesktop().open(downloadedFile.getParentFile());
             }
             ApiCalls.confirmDownload(fileId);

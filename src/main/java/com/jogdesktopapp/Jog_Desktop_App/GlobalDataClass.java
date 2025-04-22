@@ -29,6 +29,7 @@ public class GlobalDataClass {
         dataStore = new HashMap<>();
     }
     
+
     
 	// Initialize socket connection
      SocketModel socketModel;
@@ -90,11 +91,32 @@ public class GlobalDataClass {
         instance.getRedesignCompleteData(1, oneYearAgo, today);// get redesign complete 
     }
    
+    
+    
     String getToken() {
     	JSONObject data = getTokenData();
     	return data.getString("session_token");
     }
    
+    // List of listeners
+
+    private final List<UpdateUiListener> uiUpdate = new ArrayList<>();
+    /**
+     * Adds a pending file get listener.
+     */
+    public void addUIListener(UpdateUiListener listener) {
+    	uiUpdate.add(listener);
+    }
+    public void removePendingListener(UpdateUiListener listener) {
+    	uiUpdate.remove(listener);
+    } 
+    private void notifyPendingChange() {
+        for (UpdateUiListener listener : uiUpdate) {
+            listener.onUIChanged();
+        }
+    }
+    
+    
    // variables
    NotificationService notification = new NotificationService();
     
@@ -257,11 +279,11 @@ public class GlobalDataClass {
 				        	String[] parts = fullData.split(",");
 			                String filePath = parts[0];
 			                String fileId = parts[1];
-			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
+			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5],false);
 		                       if(success) {
 //				            	currentFile = null;
 		                    	   ApiCalls.confimDownload(true,reprintCurrentDownload.repId); 
-				                System.out.println("✅ Downloaded: " + reprintCurrentDownload.fileName);
+				                System.out.println("✅ Downloaded : " + reprintCurrentDownload.fileName);
 				                reprintDownloads.remove(0); // Remove after successful upload
 				                reprintDownlaodingData.data.remove(0);
 				                continue;
@@ -276,7 +298,8 @@ public class GlobalDataClass {
 				}
 				@Override
 				protected void done() {
-					System.out.println("Dwonlaod completed");
+					notifyPendingChange();
+					System.out.println("Download completed");
 				}
 			}.execute();
 
@@ -310,7 +333,7 @@ public class GlobalDataClass {
 				        	String[] parts = fullData.split(",");
 			                String filePath = parts[0];
 			                String fileId = parts[1];
-			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
+			                boolean success = sftpClient.downloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5],false);
 		                       if(success) {
 //				            	currentFile = null;
 				                System.out.println("✅ Downloaded: " + redesignCurrentDownload.fileName);
@@ -330,7 +353,8 @@ public class GlobalDataClass {
 				}
 				@Override
 				protected void done() {
-					System.out.println("Dwonlaod completed");
+					notifyPendingChange();
+					System.out.println("Download completed");
 				}
 			}.execute();
 
@@ -440,4 +464,10 @@ public class GlobalDataClass {
     public boolean containsKey(String key) {
         return dataStore.containsKey(key);
     }
+}
+
+
+//Listener interface for UI updates
+interface UpdateUiListener {
+ void onUIChanged();
 }

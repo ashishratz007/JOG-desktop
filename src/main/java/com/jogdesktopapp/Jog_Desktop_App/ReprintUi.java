@@ -16,7 +16,10 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.table.*;
 
-public class ReprintUi {
+public class ReprintUi implements UpdateUiListener {
+	
+	
+	
     static GlobalDataClass globalData = GlobalDataClass.getInstance();
     // UI Components
     private final JPanel mainPanel = new JPanel(new BorderLayout());
@@ -913,8 +916,15 @@ public class ReprintUi {
     }
     
     public JPanel getView() {
+    	App.globalData.addUIListener(this);
         return mainPanel;
     }
+
+	@Override
+	public void onUIChanged() {
+		refreshData();
+		
+	}
 }
 
 class ButtonEditor extends DefaultCellEditor {
