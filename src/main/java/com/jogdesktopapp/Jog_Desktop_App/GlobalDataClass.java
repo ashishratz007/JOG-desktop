@@ -255,14 +255,15 @@ public class GlobalDataClass {
     ReprintPendingItem reprintCurrentDownload;
    void startDownloadReprint(){
 	   if(reprintCurrentDownload != null) {
+           System.out.println("📤 Runnig.......");
 			 return;
 		 } 
    	EventQueue.invokeLater(() -> {
 			new SwingWorker<Void, Void>() {
 				@Override
 				protected Void doInBackground() throws Exception {
-					  if (reprintDownlaodingData.data.size() == 0) {
-				            System.out.println("📤 No files to download.");
+					  if (reprintDownlaodingData.data.isEmpty()) {
+				            System.out.println("📤 No files to download reprint.");
 				            return null;
 				        }
 					  List<ReprintPendingItem> reprintDownloads = reprintDownlaodingData.data;
@@ -298,7 +299,8 @@ public class GlobalDataClass {
 				}
 				@Override
 				protected void done() {
-//					notifyPendingChange();
+					reprintCurrentDownload = null;
+					notifyPendingChange();
 					System.out.println("Download completed");
 				}
 			}.execute();
@@ -316,7 +318,7 @@ public class GlobalDataClass {
 				@Override
 				protected Void doInBackground() throws Exception {
 					  if (redesignDownloadingData.data.isEmpty()) {
-				            System.out.println("📤 No files to download.");
+				            System.out.println("📤 No files to download for redesign.");
 				            return null;
 				        }
 					  List<RedesignPendingItem> redesignDownloads = redesignDownloadingData.data;
@@ -353,6 +355,7 @@ public class GlobalDataClass {
 				}
 				@Override
 				protected void done() {
+					redesignCurrentDownload = null;
 					notifyPendingChange();
 					System.out.println("Download completed");
 				}
