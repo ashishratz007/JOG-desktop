@@ -378,7 +378,7 @@ public class ApiCalls {
     	System.out.println("starting");
     	String table = isRerpint?  "reprint": "redesign";
         String apiUrl = "https://jog-desktop.jog-joinourgame.com/update_download_status.php";
-        String jsonInputString = "{\"table\": \"" + table + "\", \"synology_path\": \"" + rep_id + "\"}";
+        String jsonInputString = "{\"table\": \"" + table + "\", \"rep_id\": \"" + rep_id + "\"}";
         
         try {
             URL url = new URL(apiUrl);
