@@ -298,7 +298,7 @@ public class GlobalDataClass {
 				}
 				@Override
 				protected void done() {
-					notifyPendingChange();
+//					notifyPendingChange();
 					System.out.println("Download completed");
 				}
 			}.execute();
