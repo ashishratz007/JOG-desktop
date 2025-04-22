@@ -44,7 +44,7 @@ public class ReprintUi {
     int maxWidth = 100;
      
     public ReprintUi() {
-        downlaodingPanel = createDownloadingTablePanel(new Object[0][8]);
+        downlaodingPanel = createDownloadingTablePanel(new Object[0][6]);
         pendingPanel = createPendingTablePanel(new Object[0][7]);
         completePanel = createCompleteTablePanel(new Object[0][6]);
         initializeUI();
@@ -234,10 +234,10 @@ public class ReprintUi {
         }
         
         List<ReprintPendingItem> pageItems = downloading.data;
-        Object[][] data = new Object[pageItems.size()][8];
+        Object[][] data = new Object[pageItems.size()][6];
         
         for (int i = 0; i < pageItems.size(); i++) {
-        	ReprintPendingItem file = pageItems.get(i);
+            ReprintPendingItem file = pageItems.get(i);
             String dateStr = formatDate(file.createdOn);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(dateStr, formatter);
@@ -247,9 +247,7 @@ public class ReprintUi {
             data[i][2] = file.exCode;
             data[i][3] = formatDate(file.createdOn);
             data[i][4] = file.printerName;
-            data[i][5] = file.synologyPath + "," + file.fileId + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
-            data[i][6] = file.repId;
-            data[i][7] = file.note != null ? file.note : "";
+            data[i][5] = file.note != null ? file.note : "";
         }
         
         refreshDownloadingTable(data);
@@ -272,10 +270,10 @@ public class ReprintUi {
             data[i][0] = file.fileName;
             data[i][1] = file.orderName;
             data[i][2] = file.exCode;
-            data[i][3] = "formatDate(file.created_on)";
-            data[i][4] = "file.printerName";
+            data[i][3] = formatDate(file.createdOn);
+            data[i][4] = file.printerName;
             data[i][5] = file.synologyPath + "," + file.fileId + "," + file.exCode +  "," + dateTime.getYear()+ "," + dateTime.getMonthValue()+ "," + dateTime.getDayOfMonth();
-            data[i][6] = "";
+            data[i][6] = file.repId;
         }
         
         refreshPendingTable(data);
@@ -337,12 +335,12 @@ public class ReprintUi {
     }
     
     private JScrollPane createDownloadingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete", "Note"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5 || column == 6 || column == 7;
+                return column == 5;
             }
         };
         
@@ -363,22 +361,16 @@ public class ReprintUi {
         // Set fixed column widths
         table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Printer
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Complete
-        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(7).setPreferredWidth(maxWidth); // Note
-        table.getColumnModel().getColumn(7).setMaxWidth(maxWidth);
         
-        configureDownloadColumn(table);
-        configureCompleteColumn(table);
-        configureNoteColumn(table);
+        configureNoteColumnForDownloading(table);
         
         return new JScrollPane(table);
     }
     
     private JScrollPane createPendingTable(Object[][] data) {
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Note"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
@@ -406,11 +398,11 @@ public class ReprintUi {
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
         table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Complete
         table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
         
         configureDownloadColumnForPending(table);
-        configureNoteColumnForPending(table);
+        configureCompleteColumnForPending(table);
         
         return new JScrollPane(table);
     }
@@ -448,35 +440,6 @@ public class ReprintUi {
         return new JScrollPane(table);
     }
     
-    private void configureDownloadColumn(JTable table) {
-        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
-        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String[] parts = e.getActionCommand().split(",");
-                String filePath = parts[0];
-                String fileId = parts[1];
-                System.err.println("Part 1:  " + parts[0]);
-                System.err.println("Part 2:  " + parts[1]);
-                System.err.println("Part 3:  " + parts[2]);
-                System.err.println("Part 4:  " + parts[3]);
-                System.err.println("Part 5:  " + parts[4]);
-                System.err.println("Part 6:  " + parts[5]);
-                new SwingWorker<Void, Void>() {
-                    @Override
-                    protected Void doInBackground() throws Exception {
-                        App.globalData.sftpClient.pickAndDownloadFile(fileId, filePath,false,parts[2],parts[3],parts[4],parts[5]);
-                        return null;
-                    }
-                    @Override
-                    protected void done() {
-                        System.out.println("File retrieval completed.");
-                    }
-                }.execute();
-            }
-        }, "src/main/resources/icons/download.png"));
-    }
-    
     private void configureDownloadColumnForPending(JTable table) {
         table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/download.png"));
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
@@ -502,7 +465,7 @@ public class ReprintUi {
         }, "src/main/resources/icons/download.png"));
     }
     
-    private void configureCompleteColumn(JTable table) {
+    private void configureCompleteColumnForPending(JTable table) {
         table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("src/main/resources/icons/complete.png"));
         table.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
@@ -518,14 +481,14 @@ public class ReprintUi {
                         @Override
                         protected Void doInBackground() throws Exception {
                             ApiCalls.markComplete(true, e.getActionCommand());
-                            App.globalData.getReprintDownloadingData(currentDownloadingPage, startDate, endDate);
+                            App.globalData.getReprintPendingData(currentPendingPage, startDate, endDate);
                             App.globalData.getReprintCompleteData(currentCompletePage, startDate, endDate);
                             return null;
                         }
                         @Override
                         protected void done() {
                             SwingUtilities.invokeLater(() -> {
-                                fillDownloadingData();
+                                fillPendingData();
                                 fillCompleteData();
                             });
                         }
@@ -535,27 +498,9 @@ public class ReprintUi {
         }, "src/main/resources/icons/complete.png"));
     }
     
-    private void configureNoteColumn(JTable table) {
-        table.getColumnModel().getColumn(7).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
-        table.getColumnModel().getColumn(7).setCellEditor(new ButtonEditor(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String note = e.getActionCommand();
-                if (note != null && !note.trim().isEmpty()) {
-                    JOptionPane.showMessageDialog(
-                        null, 
-                        note, 
-                        "Note", 
-                        JOptionPane.INFORMATION_MESSAGE
-                    );
-                }
-            }
-        }, "src/main/resources/icons/note.png"));
-    }
-    
-    private void configureNoteColumnForPending(JTable table) {
-        table.getColumnModel().getColumn(6).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
-        table.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new AbstractAction() {
+    private void configureNoteColumnForDownloading(JTable table) {
+        table.getColumnModel().getColumn(5).setCellRenderer(getButtonRenderer("src/main/resources/icons/note.png"));
+        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String note = e.getActionCommand();
@@ -812,12 +757,12 @@ public class ReprintUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete", "Note"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Note"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5 || column == 6 || column == 7;
+                return column == 5;
             }
         };
         
@@ -838,16 +783,10 @@ public class ReprintUi {
         // Set fixed column widths
         table.getColumnModel().getColumn(4).setPreferredWidth(maxWidth); // Printer
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
+        table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Note
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Complete
-        table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(7).setPreferredWidth(maxWidth); // Note
-        table.getColumnModel().getColumn(7).setMaxWidth(maxWidth);
         
-        configureDownloadColumn(table);
-        configureCompleteColumn(table);
-        configureNoteColumn(table);
+        configureNoteColumnForDownloading(table);
         
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
@@ -857,7 +796,7 @@ public class ReprintUi {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(0xC4D7E9));
         
-        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Note"};
+        String[] columnNames = {"Name of file", "Order name", "Ex code", "Date", "Printer", "Download", "Set to Complete"};
         
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             @Override
@@ -885,11 +824,11 @@ public class ReprintUi {
         table.getColumnModel().getColumn(4).setMaxWidth(maxWidth);
         table.getColumnModel().getColumn(5).setPreferredWidth(maxWidth); // Download
         table.getColumnModel().getColumn(5).setMaxWidth(maxWidth);
-        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Note
+        table.getColumnModel().getColumn(6).setPreferredWidth(maxWidth); // Complete
         table.getColumnModel().getColumn(6).setMaxWidth(maxWidth);
         
         configureDownloadColumnForPending(table);
-        configureNoteColumnForPending(table);
+        configureCompleteColumnForPending(table);
         
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
@@ -1006,6 +945,7 @@ class ButtonEditor extends DefaultCellEditor {
         return value;
     }
 }
+
 
 class CustomTabUIReprint extends BasicTabbedPaneUI {
     @Override
