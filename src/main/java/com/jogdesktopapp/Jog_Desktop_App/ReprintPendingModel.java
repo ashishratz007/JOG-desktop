@@ -90,16 +90,16 @@ class ReprintPendingItem {
     public static ReprintPendingItem fromJson(JSONObject jsonObj) {
         return new ReprintPendingItem(
             jsonObj.getInt("reprint_status"),
-            jsonObj.getInt("rep_id"),
+            jsonObj.getInt("reprint_id"),
             jsonObj.getInt("file_id"),
             jsonObj.getString("printerName"),
             jsonObj.getString("note"),
             jsonObj.getString("created_on"),
             jsonObj.getString("exCode"),
-            jsonObj.getString("order_name"),
+            jsonObj.getString("orderName"),
             jsonObj.getString("file_path"),
             jsonObj.getString("synology_path"),
-            jsonObj.getString("file_name"),
+            jsonObj.getString("fileName"),
             jsonObj.getInt("synology_status")
         );
     }
