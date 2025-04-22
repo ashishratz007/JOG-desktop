@@ -93,7 +93,7 @@ class RedesignPendingItem {
             jsonObj.getString("orderName"),
             jsonObj.getString("file_path"),
             jsonObj.getString("synologyPath"),
-            jsonObj.getString("file_name"),
+            jsonObj.getString("fileName"),
             jsonObj.getInt("synology_status"),
             jsonObj.getString("note"),
             jsonObj.getString("designerName"),
