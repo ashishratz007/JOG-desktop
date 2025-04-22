@@ -6,6 +6,8 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.BorderFactory;
@@ -20,21 +22,29 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import org.json.JSONObject;
+import org.json.*;
 
 public class AppFrame extends JFrame {
+    // UI Components
     private JPanel contentPanel;
+    private JPanel sidebar;
     private JPanel[] tabs;
     private JLabel[] tabLabels;
     private BadgeLabel[] tabBadges;
-    private final String[] tabNames = {"Dashboard", "NAS Server","Reprint", "Redesign"};
-    
-    private int reprintCount = GlobalDataClass.getInstance().reprintPendingData.total;
-    private int redesignCount = GlobalDataClass.getInstance().redesignPendingData.total;
-    
-    private static AppFrame instance;
     private StatusDot statusDot;
     private JLabel statusLabel;
     
+    // Data
+    private GlobalDataClass globalData = GlobalDataClass.getInstance();
+    private final String[] allTabNames = {"Dashboard", "NAS Server", "Reprint", "Redesign"};
+    private List<String> visibleTabNames = new ArrayList<>();
+    private int reprintCount;
+    private int redesignCount;
+    private int currentSelectedTab = 0;
+    
+    // Singleton instance
+    private static AppFrame instance;
+
     public static AppFrame getInstance() {
         if (instance == null) {
             instance = new AppFrame();
@@ -43,109 +53,74 @@ public class AppFrame extends JFrame {
     }
 
     private AppFrame() {
-        initialize();
+        initializeData();
+        initializeUI();
         initializeSocketStatusListener();
     }
 
-    
-    private void showLogoutConfirmation() {
-        // Create a custom dialog
-        JDialog dialog = new JDialog(this, "Logout Confirmation", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(300, 150);
-        dialog.setLocationRelativeTo(this);
-        dialog.setResizable(false);
-
-        // Message panel
-        JPanel messagePanel = new JPanel(new BorderLayout());
-        messagePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
-        
-        JLabel messageLabel = new JLabel("<html><center>Are you sure you want to logout from this device?</center></html>");
-        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        messagePanel.add(messageLabel, BorderLayout.CENTER);
-        
-        dialog.add(messagePanel, BorderLayout.CENTER);
-
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        
-        JButton okButton = new JButton("OK");
-        okButton.addActionListener(e -> {
-        	
-        	String token = "";
-        	
-        	String response = GlobalDataClass.getInstance().readTokenFromDesktop();
-        
-        	// Parse JSON string
-        	JSONObject jsonObject = new JSONObject(response);
-        	boolean isLogout =  ApiCalls.logout(jsonObject.getString("session_token"));
-        	if(isLogout) {
-        		GlobalDataClass.getInstance().deleteTokenFile();
-        		cleanupBeforeRestart();
-        	}
-        	dialog.dispose();
-        });
-        
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> dialog.dispose());
-        
-        buttonPanel.add(okButton);
-        buttonPanel.add(cancelButton);
-        
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-
-        dialog.setVisible(true);
+    // Initialization Methods
+    private void initializeData() {
+        reprintCount = globalData.reprintPendingData.total;
+        redesignCount = globalData.redesignPendingData.total;
+        updateVisibleTabs();
     }
-    
-    
-    private void cleanupBeforeRestart() {
-        // Close any open resources
-        SocketModel.getInstance().close(); 
+
+    private void updateVisibleTabs() {
+        visibleTabNames.clear();
+        visibleTabNames.add("Dashboard"); // Always visible
         
-        
-        // Dispose of any open windows
-        AppFrame.instance.dispose();
-        LoginFrame.view();
+        if (globalData.isAdobe()) {
+            visibleTabNames.add("NAS Server");
+        }
+        if (globalData.canReprint()) {
+            visibleTabNames.add("Reprint");
+        }
+        if (globalData.canRedesign()) {
+            visibleTabNames.add("Redesign");
+        }
     }
-    
-    private void initialize() {
-        // Frame setup
+
+    private void initializeUI() {
+        configureMainFrame();
+        createSidebar();
+        createAppBar();
+        createContentPanel();
+        setSelectedTab(0);
+    }
+
+    private void configureMainFrame() {
         setTitle("JOG Desktop App");
         setBounds(100, 100, 1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout());
+    }
 
-        // Sidebar Panel
-        JPanel sidebar = new JPanel();
+    private void createSidebar() {
+        sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setPreferredSize(new Dimension(150, getHeight()));
         sidebar.setBackground(new Color(240, 240, 240));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)));
 
-        // Initialize tabs and badges
-        tabs = new JPanel[tabNames.length];
-        tabLabels = new JLabel[tabNames.length];
-        tabBadges = new BadgeLabel[tabNames.length];
-        
-        for (int i = 0; i < tabNames.length; i++) {
-            tabs[i] = createTab(tabNames[i], i);
+        tabs = new JPanel[visibleTabNames.size()];
+        tabLabels = new JLabel[visibleTabNames.size()];
+        tabBadges = new BadgeLabel[visibleTabNames.size()];
+
+        for (int i = 0; i < visibleTabNames.size(); i++) {
+            tabs[i] = createTab(visibleTabNames.get(i), i);
             sidebar.add(tabs[i]);
         }
-        getContentPane().add(sidebar, BorderLayout.WEST);
 
-        // Top App Bar
+        getContentPane().add(sidebar, BorderLayout.WEST);
+    }
+
+    private void createAppBar() {
         JPanel appbar = new JPanel(new BorderLayout());
         appbar.setBackground(Color.WHITE);
         appbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
 
         // Logo
-        ImageIcon logoIcon = new ImageIcon("src/main/resources/icons/logo.png");
-        Image logoImage = logoIcon.getImage().getScaledInstance(150, 50, Image.SCALE_SMOOTH);
-        JLabel logoLabel = new JLabel(new ImageIcon(logoImage));
-        logoLabel.setPreferredSize(new Dimension(150, 50));
-        logoLabel.setOpaque(true);
-        logoLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
-        logoLabel.setBackground(new Color(240, 240, 240));
+        JLabel logoLabel = createLogoLabel();
         appbar.add(logoLabel, BorderLayout.WEST);
 
         // Title
@@ -154,12 +129,43 @@ public class AppFrame extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         appbar.add(titleLabel, BorderLayout.CENTER);
 
-     // Status Panel
+        // Status Panel
+        JPanel statusPanel = createStatusPanel();
+        appbar.add(statusPanel, BorderLayout.EAST);
+
+        getContentPane().add(appbar, BorderLayout.NORTH);
+    }
+
+    private JLabel createLogoLabel() {
+        ImageIcon logoIcon = new ImageIcon("src/main/resources/icons/logo.png");
+        Image logoImage = logoIcon.getImage().getScaledInstance(150, 50, Image.SCALE_SMOOTH);
+        JLabel logoLabel = new JLabel(new ImageIcon(logoImage));
+        logoLabel.setPreferredSize(new Dimension(150, 50));
+        logoLabel.setOpaque(true);
+        logoLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        logoLabel.setBackground(new Color(240, 240, 240));
+        return logoLabel;
+    }
+
+    private JPanel createStatusPanel() {
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         statusPanel.setBackground(Color.WHITE);
 
-        // Logout Button
-        ImageIcon logoutIcon = new ImageIcon("src/main/resources/icons/logout.png"); // Make sure you have this icon
+        statusDot = new StatusDot(new Color(132, 226, 89));
+        statusLabel = new JLabel("Online");
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JLabel logoutLabel = createLogoutButton();
+
+        statusPanel.add(statusDot);
+        statusPanel.add(statusLabel);
+        statusPanel.add(logoutLabel);
+
+        return statusPanel;
+    }
+
+    private JLabel createLogoutButton() {
+        ImageIcon logoutIcon = new ImageIcon("src/main/resources/icons/logout.png");
         Image logoutImage = logoutIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         JLabel logoutLabel = new JLabel(new ImageIcon(logoutImage));
         logoutLabel.setToolTipText("Logout");
@@ -170,60 +176,15 @@ public class AppFrame extends JFrame {
                 showLogoutConfirmation();
             }
         });
+        return logoutLabel;
+    }
 
-        // Status Dot
-        statusDot = new StatusDot(new Color(132, 226, 89));
-
-        // Status Label
-        statusLabel = new JLabel("Online");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-
-       
-        statusPanel.add(statusDot);
-        statusPanel.add(statusLabel);
-        statusPanel.add(logoutLabel);
-        appbar.add(statusPanel, BorderLayout.EAST);
-        getContentPane().add(appbar, BorderLayout.NORTH);
-
-        // Main content panel
+    private void createContentPanel() {
         contentPanel = new JPanel(new BorderLayout());
-        contentPanel.add(new JLabel("Dashboard View", SwingConstants.CENTER), BorderLayout.CENTER);
         getContentPane().add(contentPanel, BorderLayout.CENTER);
-        
-        // Set default selected tab
-        setSelectedTab(0);
-    }
-    
-
-
-    private void initializeSocketStatusListener() {
-        SocketModel socket = SocketModel.getInstance();
-        
-        socket.addPropertyChangeListener("connected", new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                boolean isConnected = (boolean) evt.getNewValue();
-                updateConnectionStatus(isConnected);
-            }
-        });
-        
-        // Initial status update
-        updateConnectionStatus(socket.isOpen());
     }
 
-     void updateConnectionStatus(boolean isConnected) {
-        SwingUtilities.invokeLater(() -> {
-            if (isConnected) {
-                statusDot.setFillColor(new Color(132, 226, 89)); // Green
-                statusLabel.setText("Online");
-            } else {
-                statusDot.setFillColor(new Color(255, 59, 48)); // Red
-                statusLabel.setText("Offline");
-            }
-            statusDot.repaint();
-        });
-    }
-
+    // Tab Management
     private JPanel createTab(String name, int index) {
         JPanel tab = new JPanel(new BorderLayout());
         tab.setPreferredSize(new Dimension(150, 40));
@@ -246,15 +207,29 @@ public class AppFrame extends JFrame {
         tab.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                setSelectedTab(index); 
-                reprintCount = GlobalDataClass.getInstance().reprintPendingData.total;
-                redesignCount = GlobalDataClass.getInstance().redesignPendingData.total;
+                currentSelectedTab = index;
+                setSelectedTab(index);
+                refreshCounts();
                 updateBadges();
             }
         });
 
         tabLabels[index] = label;
         return tab;
+    }
+
+    public void refreshUI() {
+        initializeData();
+        getContentPane().remove(sidebar);
+        createSidebar();
+        setSelectedTab(currentSelectedTab < visibleTabNames.size() ? currentSelectedTab : 0);
+        revalidate();
+        repaint();
+    }
+
+    private void refreshCounts() {
+        reprintCount = globalData.reprintPendingData.total;
+        redesignCount = globalData.redesignPendingData.total;
     }
 
     private void setSelectedTab(int selectedIndex) {
@@ -264,11 +239,21 @@ public class AppFrame extends JFrame {
                 tabLabels[i].setForeground(Color.WHITE);
                 
                 contentPanel.removeAll();
-                switch (i) {
-                    case 0: contentPanel.add(new Dashboard().view(), BorderLayout.CENTER); break;                
-                    case 1: contentPanel.add(new NasServer().view(), BorderLayout.CENTER); break;
-                    case 2: contentPanel.add(new ReprintUi().getView(), BorderLayout.CENTER); break;
-                    case 3: contentPanel.add(new RedesignUi().getView(), BorderLayout.CENTER); break;
+                String tabName = visibleTabNames.get(i);
+                
+                switch (tabName) {
+                    case "Dashboard":
+                        contentPanel.add(new Dashboard().view(), BorderLayout.CENTER);
+                        break;                
+                    case "NAS Server":
+                        contentPanel.add(new NasServer().view(), BorderLayout.CENTER);
+                        break;
+                    case "Reprint":
+                        contentPanel.add(new ReprintUi().getView(), BorderLayout.CENTER);
+                        break;
+                    case "Redesign":
+                        contentPanel.add(new RedesignUi().getView(), BorderLayout.CENTER);
+                        break;
                 }
             } else {
                 tabs[i].setBackground(new Color(240, 240, 240));
@@ -279,9 +264,17 @@ public class AppFrame extends JFrame {
         contentPanel.repaint();
     }
 
+    // Badge Management
     public void updateBadges() {
-        tabBadges[2].setCount(reprintCount);
-        tabBadges[3].setCount(redesignCount);
+        int reprintIndex = visibleTabNames.indexOf("Reprint");
+        int redesignIndex = visibleTabNames.indexOf("Redesign");
+        
+        if (reprintIndex != -1) {
+            tabBadges[reprintIndex].setCount(reprintCount);
+        }
+        if (redesignIndex != -1) {
+            tabBadges[redesignIndex].setCount(redesignCount);
+        }
         
         for (JPanel tab : tabs) {
             tab.revalidate();
@@ -289,26 +282,69 @@ public class AppFrame extends JFrame {
         }
     }
 
-    public int getReprintCount() {
-        return reprintCount;
+    // Socket Status
+    private void initializeSocketStatusListener() {
+        SocketModel socket = SocketModel.getInstance();
+        socket.addPropertyChangeListener("connected", evt -> {
+            boolean isConnected = (boolean) evt.getNewValue();
+            updateConnectionStatus(isConnected);
+        });
+        updateConnectionStatus(socket.isOpen());
     }
 
-    public void setReprintCount(int count) {
-        count = GlobalDataClass.getInstance().reprintPendingData.total;
-        this.reprintCount = count;
-        updateBadges();
+    void updateConnectionStatus(boolean isConnected) {
+        SwingUtilities.invokeLater(() -> {
+            statusDot.setFillColor(isConnected ? new Color(132, 226, 89) : new Color(255, 59, 48));
+            statusLabel.setText(isConnected ? "Online" : "Offline");
+            statusDot.repaint();
+        });
     }
 
-    public int getRedesignCount() {
-        return redesignCount;
+    // Logout Handling
+    private void showLogoutConfirmation() {
+        JDialog dialog = new JDialog(this, "Logout Confirmation", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(300, 150);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+        JLabel messageLabel = new JLabel("<html><center>Are you sure you want to logout?</center></html>");
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        messagePanel.add(messageLabel, BorderLayout.CENTER);
+        dialog.add(messagePanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(e -> handleLogout(dialog));
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
     }
 
-    public void setRedesignCount(int count) {
-        count = GlobalDataClass.getInstance().redesignDownloadingData.total;
-        this.redesignCount = count;
-        updateBadges();
+    private void handleLogout(JDialog dialog) {
+        String response = GlobalDataClass.getInstance().readTokenFromDesktop();
+        JSONObject jsonObject = new JSONObject(response);
+        if (ApiCalls.logout(jsonObject.getString("session_token"))) {
+            GlobalDataClass.getInstance().deleteTokenFile();
+            cleanupBeforeRestart();
+        }
+        dialog.dispose();
     }
 
+    private void cleanupBeforeRestart() {
+        SocketModel.getInstance().close();
+        dispose();
+        LoginFrame.view();
+    }
+
+    // Inner Classes
     class BadgeLabel extends JLabel {
         private int count = 0;
         private final Color badgeColor = new Color(255, 59, 48);
@@ -326,9 +362,7 @@ public class AppFrame extends JFrame {
         }
 
         public void setCount(int newCount) {
-            if (newCount > previousCount) {
-                startBlinking();
-            }
+            if (newCount > previousCount) startBlinking();
             previousCount = count;
             this.count = newCount;
             setText(newCount > 99 ? "99+" : String.valueOf(newCount));
@@ -336,35 +370,23 @@ public class AppFrame extends JFrame {
             repaint();
         }
 
-        public void startBlinking() {
+        private void startBlinking() {
             stopBlinking();
-            
             blinkTimer = new Timer(true);
-            isVisible = true;
-            
             blinkTimer.scheduleAtFixedRate(new TimerTask() {
                 private int blinkCount = 0;
-                private final int totalBlinks = 10;
-
-                @Override
                 public void run() {
                     SwingUtilities.invokeLater(() -> {
                         isVisible = !isVisible;
                         repaint();
-                        blinkCount++;
-                        if (blinkCount >= totalBlinks) {
-                            stopBlinking();
-                        }
+                        if (++blinkCount >= 10) stopBlinking();
                     });
                 }
             }, 0, 500);
         }
 
-        public void stopBlinking() {
-            if (blinkTimer != null) {
-                blinkTimer.cancel();
-                blinkTimer = null;
-            }
+        private void stopBlinking() {
+            if (blinkTimer != null) blinkTimer.cancel();
             isVisible = true;
             repaint();
         }
@@ -375,30 +397,25 @@ public class AppFrame extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                int diameter;
-                if (count < 10) diameter = 18;
-                else if (count < 100) diameter = 22;
-                else diameter = 26;
-                
+                int diameter = count < 10 ? 18 : count < 100 ? 22 : 26;
                 g2.setColor(badgeColor);
                 g2.fillOval(0, 0, diameter, diameter);
                 
                 FontMetrics fm = g2.getFontMetrics();
                 Rectangle2D textBounds = fm.getStringBounds(getText(), g2);
-                int textX = (diameter - (int)textBounds.getWidth()) / 2;
-                int textY = (diameter - (int)textBounds.getHeight()) / 2 + fm.getAscent();
-                
                 g2.setColor(Color.WHITE);
-                g2.drawString(getText(), textX, textY);
+                g2.drawString(getText(), 
+                    (diameter - (int)textBounds.getWidth())/2, 
+                    (diameter - (int)textBounds.getHeight())/2 + fm.getAscent());
                 g2.dispose();
             }
         }
 
         @Override
         public Dimension getPreferredSize() {
-            if (count < 10) return new Dimension(18, 18);
-            if (count < 100) return new Dimension(22, 22);
-            return new Dimension(26, 26);
+            return count < 10 ? new Dimension(18, 18) : 
+                   count < 100 ? new Dimension(22, 22) : 
+                   new Dimension(26, 26);
         }
     }
 
@@ -422,10 +439,24 @@ public class AppFrame extends JFrame {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(fillColor);
-            g2.fillOval(2, 2, getWidth() - 4, getHeight() - 4);
+            g2.fillOval(2, 2, getWidth()-4, getHeight()-4);
             g2.setColor(Color.WHITE);
             g2.setStroke(new BasicStroke(2));
-            g2.drawOval(2, 2, getWidth() - 4, getHeight() - 4);
+            g2.drawOval(2, 2, getWidth()-4, getHeight()-4);
         }
+    }
+
+    // Getters and Setters
+    public int getReprintCount() { return reprintCount; }
+    public int getRedesignCount() { return redesignCount; }
+
+    public void setReprintCount(int count) { 
+        this.reprintCount = GlobalDataClass.getInstance().reprintPendingData.total;
+        updateBadges();
+    }
+
+    public void setRedesignCount(int count) {
+        this.redesignCount = GlobalDataClass.getInstance().redesignDownloadingData.total;
+        updateBadges();
     }
 }

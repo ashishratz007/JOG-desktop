@@ -130,10 +130,11 @@ public class LoginFrame extends JFrame {
 	
 	public static void runMainView(){
 		EventQueue.invokeLater(() -> {
-		try {  
+		try { 
 //            synologyServer.init(); // Now it won't be null
 			AppFrame window =  AppFrame.getInstance();
 			window.setVisible(true);
+			window.refreshUI();
 			EventQueue.invokeLater(() -> {
 				new SwingWorker<Void, Void>() {
 					@Override
@@ -170,6 +171,7 @@ public class LoginFrame extends JFrame {
 	}
 
 	  public static void initilizeData() {
+		  
 	    	EventQueue.invokeLater(() -> {
 				new SwingWorker<Void, Void>() {
 					@Override

@@ -64,12 +64,12 @@ public class GlobalDataClass {
     	downloadFiles= null;
     	sftpClient = null;
     	socketModel = null;
+    	setUserRole();
     	downloadFiles = PendingDataModel.getInstance();
     	sftpClient = SftpUploader.getInstance();
     	socketModel = SocketModel.getInstance();
     	System.err.println("Api called for reprint and redesign");
     	pendingAndReprint();
-    	setUserRole();
     	socketModel.connectSocket();
     	
     }
@@ -410,18 +410,18 @@ public class GlobalDataClass {
    
    // role permission 1:Adobe, 2:Reprint, 3: Redesign,4:reprint/redesign
    public boolean isAdobe() {
-	   return userRole == 1;
+	   return userRole == 1 || userRole == 4;
    }
    public boolean canReprint() {
 	   return userRole == 2 || userRole == 4;
    }
    
-   public boolean canRedeigner() {
+   public boolean canRedesign() {
 	   return userRole == 3 || userRole == 4;
    }
    
    public boolean admin() {
-	   return userRole == 3 || userRole == 4;
+	   return  userRole == 4;
    }
    
     // Example functions 
