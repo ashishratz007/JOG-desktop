@@ -261,7 +261,7 @@ public class GlobalDataClass {
 			new SwingWorker<Void, Void>() {
 				@Override
 				protected Void doInBackground() throws Exception {
-					  if (reprintDownlaodingData.data.isEmpty()) {
+					  if (reprintDownlaodingData.data.size() == 0) {
 				            System.out.println("📤 No files to download.");
 				            return null;
 				        }
