@@ -76,7 +76,7 @@ public class ReprintUi implements UpdateUiListener {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titlePanel.add(titleLabel, BorderLayout.WEST);
 
-        JLabel countLabel = new JLabel("Files for Reprint : " + globalData.reprintDownlaodingData.total);
+        JLabel countLabel = new JLabel("Files for Reprint : " + globalData.reprintPendingData.total);
         countLabel.setForeground(Color.WHITE);
         countLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -89,9 +89,13 @@ public class ReprintUi implements UpdateUiListener {
     }
     
     private JPanel createDateRangePickerPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        JPanel panel = new JPanel(new BorderLayout()); // Changed to BorderLayout
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        // Create the date range panel (left side)
+        JPanel dateRangePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        dateRangePanel.setBackground(Color.WHITE);
 
         // Start Date components
         JLabel startDateLabel = new JLabel("Start Date:");
@@ -136,13 +140,112 @@ public class ReprintUi implements UpdateUiListener {
             refreshDataForDateRange();
         });
 
-        panel.add(startDateLabel);
-        panel.add(startDateSpinner);
-        panel.add(rigidArea);
-        panel.add(endDateLabel);
-        panel.add(endDateSpinner);
+        dateRangePanel.add(startDateLabel);
+        dateRangePanel.add(startDateSpinner);
+        dateRangePanel.add(rigidArea);
+        dateRangePanel.add(endDateLabel);
+        dateRangePanel.add(endDateSpinner);
+
+        // Add the date range panel to the left
+        panel.add(dateRangePanel, BorderLayout.WEST);
+
+//        if(tabbedPane.getSelectedIndex() == 1) {
+        // Add "Mark All as Done" button to the right
+        JButton markAllButton = new JButton("Mark All as Done");
+        markAllButton.setFont(new Font("Arial", Font.PLAIN, 12));
+        markAllButton.setBackground(new Color(0, 102, 204));
+        markAllButton.setForeground(AppColors.PrimaryDark);
+        markAllButton.setFocusPainted(false);
+        markAllButton.addActionListener(e -> handleMarkAllAsDone());
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.add(markAllButton);
+        
+        
+        panel.add(buttonPanel, BorderLayout.EAST);
+//        }
 
         return panel;
+    }
+    
+    private void handleMarkAllAsDone() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        
+        if (selectedIndex != 1) { // Only available in Pending tab
+            JOptionPane.showMessageDialog(mainPanel, 
+                "This feature is only available in the Pending tab", 
+                "Information", 
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        if (pending == null || pending.data == null || pending.data.isEmpty()) {
+            JOptionPane.showMessageDialog(mainPanel, 
+                "No pending items to mark as complete", 
+                "Information", 
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        int response = JOptionPane.showConfirmDialog(mainPanel, 
+            "Are you sure you want to mark ALL visible pending items as complete?", 
+            "Confirm Action", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.QUESTION_MESSAGE);
+        
+        if (response == JOptionPane.YES_OPTION) {
+            setStatusPanel("Marking all as complete...");
+            
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    try {
+                    	for (ReprintPendingItem item : pending.data) {
+                            try {
+                                // Make individual API call for each item
+                               String id = String.valueOf(item.repId);
+                                ApiCalls.markComplete(true, id);
+                                
+                                // Small delay between calls to avoid overwhelming the server
+                                Thread.sleep(200);
+                            } catch (Exception e) {
+                              
+                                System.err.println("Failed to mark item " + item.repId + " as complete: " + e.getMessage());
+                            }
+                        }
+                        
+                       ///TODO
+//                         ApiCalls.markComplete(true, e.getActionCommand());
+                        // Refresh data
+                        App.globalData.getReprintPendingData(currentPendingPage, startDate, endDate);
+                        App.globalData.getReprintCompleteData(currentCompletePage, startDate, endDate);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        SwingUtilities.invokeLater(() -> {
+                            JOptionPane.showMessageDialog(mainPanel, 
+                                "Error marking items as complete: " + e.getMessage(), 
+                                "Error", 
+                                JOptionPane.ERROR_MESSAGE);
+                        });
+                    }
+                    return null;
+                }
+                
+                @Override
+                protected void done() {
+                    SwingUtilities.invokeLater(() -> {
+                        setStatusPanel("Idle");
+                        fillPendingData();
+                        fillCompleteData();
+                        JOptionPane.showMessageDialog(mainPanel, 
+                            "All visible pending items have been marked as complete", 
+                            "Success", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    });
+                }
+            }.execute();
+        }
     }
     
     private JTabbedPane createTabbedPane() {
