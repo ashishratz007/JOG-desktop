@@ -151,7 +151,7 @@ public class RedesignUi implements UpdateUiListener{
         JButton markAllButton = new JButton("Mark All as Done");
         markAllButton.setFont(new Font("Arial", Font.PLAIN, 12));
         markAllButton.setBackground(new Color(0, 102, 204));
-        markAllButton.setForeground(AppColors.PrimaryDark);
+        markAllButton.setForeground(AppColors.WHITE);
         markAllButton.setFocusPainted(false);
         markAllButton.addActionListener(e -> handleMarkAllAsDone());
         
