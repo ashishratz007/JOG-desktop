@@ -293,7 +293,7 @@ public class GlobalDataClass {
 					reprintCurrentDownload = null;
 					notifyPendingChange();
 					getReprintPendingData(1, oneYearAgo, today);// get reprint pending
-					getRedesignPendingData(1, oneYearAgo, today);// get redesign pending 
+				
 					System.out.println("Download completed");
 				}
 			}.execute();
@@ -350,6 +350,10 @@ public class GlobalDataClass {
 				protected void done() {
 					redesignCurrentDownload = null;
 					notifyPendingChange();
+					LocalDate today = LocalDate.now();
+			        // Get the date one year before today
+			        LocalDate oneYearAgo = today.minusYears(1);
+			        getRedesignPendingData(1, oneYearAgo, today);// get redesign pending 
 					System.out.println("Download completed");
 				}
 			}.execute();
