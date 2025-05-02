@@ -285,8 +285,15 @@ public class GlobalDataClass {
 				}
 				@Override
 				protected void done() {
+					LocalDate today = LocalDate.now();
+			        
+			    	
+			        // Get the date one year before today
+			        LocalDate oneYearAgo = today.minusYears(1);
 					reprintCurrentDownload = null;
 					notifyPendingChange();
+					getReprintPendingData(1, oneYearAgo, today);// get reprint pending
+					getRedesignPendingData(1, oneYearAgo, today);// get redesign pending 
 					System.out.println("Download completed");
 				}
 			}.execute();
