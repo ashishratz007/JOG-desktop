@@ -480,7 +480,7 @@ private void createSidebar() {
     }
 
     public void setRedesignCount(int count) {
-        this.redesignCount = GlobalDataClass.getInstance().redesignDownloadingData.total;
+        this.redesignCount = GlobalDataClass.getInstance().redesignPendingData.total;
         updateBadges();
     }
 }
