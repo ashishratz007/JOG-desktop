@@ -202,7 +202,7 @@ public class RedesignUi implements UpdateUiListener{
                             try {
                                 // Make individual API call for each item
                                String id = String.valueOf(item.repId);
-                                ApiCalls.markComplete(true, id);
+                                ApiCalls.markComplete(false, id);
                                 
                                 // Small delay between calls to avoid overwhelming the server
                                 Thread.sleep(200);

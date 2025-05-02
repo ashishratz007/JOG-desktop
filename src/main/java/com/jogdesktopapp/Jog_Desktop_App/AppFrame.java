@@ -22,6 +22,9 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import org.json.JSONObject;
+
+import javafx.scene.shape.Box;
+
 import org.json.*;
 
 public class AppFrame extends JFrame {
@@ -95,26 +98,47 @@ public class AppFrame extends JFrame {
         getContentPane().setLayout(new BorderLayout());
     }
 
-    private void createSidebar() {
-        sidebar = new JPanel();
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setPreferredSize(new Dimension(150, getHeight()));
-        sidebar.setBackground(new Color(240, 240, 240));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)));
+private void createSidebar() {
+    sidebar = new JPanel();
+    sidebar.setLayout(new BorderLayout());  // Changed to BorderLayout for better control
+    sidebar.setPreferredSize(new Dimension(150, getHeight()));
+    sidebar.setBackground(new Color(240, 240, 240));
+    sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)));
 
-        tabs = new JPanel[visibleTabNames.size()];
-        tabLabels = new JLabel[visibleTabNames.size()];
-        tabBadges = new BadgeLabel[visibleTabNames.size()];
+    // Create a panel for the tabs
+    JPanel tabsPanel = new JPanel();
+    tabsPanel.setLayout(new BoxLayout(tabsPanel, BoxLayout.Y_AXIS));
+    tabsPanel.setBackground(new Color(240, 240, 240));
 
-        for (int i = 0; i < visibleTabNames.size(); i++) {
-            tabs[i] = createTab(visibleTabNames.get(i), i);
-            sidebar.add(tabs[i]);
-        }
+    tabs = new JPanel[visibleTabNames.size()];
+    tabLabels = new JLabel[visibleTabNames.size()];
+    tabBadges = new BadgeLabel[visibleTabNames.size()];
 
-        getContentPane().add(sidebar, BorderLayout.WEST);
+    for (int i = 0; i < visibleTabNames.size(); i++) {
+        tabs[i] = createTab(visibleTabNames.get(i), i);
+        tabsPanel.add(tabs[i]);
     }
 
-    private void createAppBar() {
+    // Add the tabs panel to the center (will take most space)
+    sidebar.add(tabsPanel, BorderLayout.CENTER);
+
+    // Create panel for your name at the bottom
+    JPanel namePanel = new JPanel(new BorderLayout());
+    namePanel.setBackground(new Color(240, 240, 240));
+    namePanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 10));
+    
+    JLabel nameLabel = new JLabel(globalData.getName());
+    nameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+    nameLabel.setHorizontalAlignment(SwingConstants.LEFT);
+    namePanel.add(nameLabel, BorderLayout.WEST);
+    
+    // Add name panel to the bottom of the sidebar
+    sidebar.add(namePanel, BorderLayout.SOUTH);
+
+    getContentPane().add(sidebar, BorderLayout.WEST);
+} 
+  
+  private void createAppBar() {
         JPanel appbar = new JPanel(new BorderLayout());
         appbar.setBackground(Color.WHITE);
         appbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));

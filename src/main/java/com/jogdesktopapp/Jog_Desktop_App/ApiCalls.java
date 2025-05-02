@@ -19,6 +19,13 @@ public class ApiCalls {
         String jsonInputString = "{\"username\": \"" + username + "\", \"password\": \"" + password + "\", \"serialnumber\": \"" + serialnumber + "\"}"; 
         
         try {
+        	/// create token file first 
+        	boolean fileCreated = GlobalDataClass.getInstance().createTokenFile();
+        	if(!fileCreated) {
+        		String error = "Unable to have acess to create file in this directory\nDisable antivirus and window defender and try again";
+        		 throw new Exception(error); 
+        	}
+        	
             URL url = new URL(apiUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");

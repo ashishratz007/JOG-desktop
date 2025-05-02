@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.swing.SwingWorker;
 
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public class GlobalDataClass {
     private static GlobalDataClass instance;
@@ -93,7 +95,7 @@ public class GlobalDataClass {
    
     
     
-    String getToken() {
+   public String getToken() {
     	JSONObject data = getTokenData();
     	return data.getString("session_token");
     }
@@ -228,23 +230,7 @@ public class GlobalDataClass {
         designCompleteData = ApiCalls.getRedesignList(1, 10, page, startDateStr, endDateStr);
     }  
     
-    
-    // save token
-    public  boolean saveTokenToDesktop(String content) {
-        try {
-            // Get the path to the desktop
-            String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
-            Path filePath = Paths.get(desktopPath);
-            
-            // Write content to file (creates file if it doesn't exist)
-            Files.write(filePath, content.getBytes());
-            
-            return true;
-        } catch (IOException e) {
-            System.err.println("Error saving token file: " + e.getMessage());
-            return false;
-        }
-    }
+   
     
     /// auto download the files to the user system 
     void startDownload(){
@@ -379,29 +365,90 @@ public class GlobalDataClass {
    }
    //==================================================token data========================================================== 
    
-   // read token
-   public  String readTokenFromDesktop() {
-       try {
-           // Get the path to the desktop file
-           String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
-           Path filePath = Paths.get(desktopPath);
-           
-           // Check if file exists
-           if (!Files.exists(filePath)) {
-               System.err.println("Token file not found on desktop");
-               return null;
-           }
-           
-           // Read all bytes and convert to String
-           byte[] fileBytes = Files.readAllBytes(filePath);
-           return new String(fileBytes);
-           
-       } catch (IOException e) {
-           System.err.println("Error reading token file: " + e.getMessage());
-           return null;
-       }
-   }
    
+//    private static final String TOKEN_FILENAME = "token.txt";
+    private static final String HIDDEN_TOKEN_FILENAME = ".token.txt";
+    
+    // Get the appropriate file path based on OS
+    private Path getTokenFilePath() {
+        String desktop = System.getProperty("user.home") + "/Desktop/";
+        String filename = HIDDEN_TOKEN_FILENAME ;
+        return Paths.get(desktop + filename);
+    }
+    
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+    
+    // Save token to desktop (optionally hidden)
+    public boolean saveTokenToDesktop(String content) {
+        Objects.requireNonNull(content, "Token content cannot be null");
+        
+        try {
+            Path filePath = getTokenFilePath();
+            
+            // Write content to file
+            Files.write(filePath, content.getBytes(), 
+                       StandardOpenOption.CREATE, 
+                       StandardOpenOption.TRUNCATE_EXISTING);
+            
+            // Set hidden attribute on Windows
+            if (isWindows()) {
+                try {
+                    Files.setAttribute(filePath, "dos:hidden", true);
+                } catch (IOException e) {
+                    System.err.println("Warning: Could not set hidden attribute: " + e.getMessage());
+                }
+            }
+            
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error saving token file: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    // Create empty token file (optionally hidden)
+    public boolean createTokenFile() {
+        return saveTokenToDesktop("");
+    }
+    
+    // Read token from desktop (handles both hidden and visible files)
+    public String readTokenFromDesktop() {
+        try {
+            // Try regular filename first
+            Path filePath = getTokenFilePath();
+            
+            // If not found, try hidden filename
+            if (!Files.exists(filePath) && !isWindows()) {
+                filePath = getTokenFilePath();
+            }
+            
+            if (!Files.exists(filePath)) {
+                System.err.println("Token file not found on desktop");
+                return null;
+            }
+            
+            if (Files.size(filePath) == 0) {
+                System.err.println("Token file is empty");
+                return null;
+            }
+            
+            return new String(Files.readAllBytes(filePath));
+            
+        } catch (IOException e) {
+            System.err.println("Error reading token file: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    // Check if token file exists
+    public boolean tokenFileExists() {
+        Path regularPath = getTokenFilePath();
+        Path hiddenPath = getTokenFilePath();
+        
+        return Files.exists(regularPath) || (!isWindows() && Files.exists(hiddenPath));
+    }
    public JSONObject getTokenData() {
    	String response = GlobalDataClass.getInstance().readTokenFromDesktop();
        if(response == null) {
@@ -414,7 +461,7 @@ public class GlobalDataClass {
    
    // delete token
    public  boolean deleteTokenFile() {
-   	String desktopPath = System.getProperty("user.home") + "/Desktop/token.txt";
+   	String desktopPath = System.getProperty("user.home") + "/Desktop/.token.txt";
    	Path filePath = Paths.get(desktopPath);
        try {
            if (Files.exists(filePath)) {
@@ -432,6 +479,12 @@ public class GlobalDataClass {
 	   // for role 
 	   JSONObject tokenData = getTokenData();
 	   userRole = tokenData.getInt("role");
+   }
+   
+  public String getName () {
+	   //fullname
+	   JSONObject tokenData = getTokenData();
+	   return tokenData.getString("fullname");
    }
    
    
