@@ -8,6 +8,7 @@ import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Year;
 import java.util.ArrayList;
@@ -242,6 +243,16 @@ private boolean uploadFile(String localPath, String uploadFolderName) {
 
         // Call API with image data
         ApiCalls.confirmUpload(currentFile.getId(), remoteFilePath, base64Image);
+        try {
+        	Path filePath = Paths.get(localPath); 
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error deleting token file: " + e.getMessage());
+          
+        }
         return true;
 
     } catch (JSchException | SftpException e) {
@@ -304,7 +315,7 @@ public boolean downloadFile(String fileId, String downloadPath,boolean isDesign 
     Session session = null;
     ChannelSftp channel = null;
  // Ensure directory exists
-    String storePath = "C:\\Users\\JOG-Graphic\\Desktop\\JOG India Workspace\\download";
+    String storePath = System.getProperty("user.home") + "\\Desktop\\"+ "\\JOG India Workspace\\download";
     if(isDesign) {
     	storePath = storePath + "//redesign";
     }
